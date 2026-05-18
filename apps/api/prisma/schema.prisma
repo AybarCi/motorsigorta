@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+}
+
+enum InsuranceType {
+  TRAFFIC
+  KASKO
+  MOTORCYCLE
+  DASK
+  HOME_CONTENT
+  HEALTH
+  BUSINESS
+  FIRE
+}
+
+model Lead {
+  id                 String        @id @default(uuid())
+  tracking_id        String        @unique
+  insurance_category String
+  insurance_type     InsuranceType
+  dynamic_fields     Json
+  phone              String        @unique
+  utm_source         String?
+  utm_campaign       String?
+  lead_source        String?
+  status             LeadStatus    @default(NEW)
+  created_at         DateTime      @default(now())
+  updated_at         DateTime      @updatedAt
+
+  @@map("leads")
+}
