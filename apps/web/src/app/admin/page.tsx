@@ -213,6 +213,7 @@ export default function AdminPanel() {
               <tbody className="divide-y divide-slate-100">
                 
                 {/* LEADS TABLO İÇERİĞİ */}
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {activeTab === 'leads' && filteredLeads.map((lead: any) => (
                   <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors group">
                     <td className="px-6 py-4">
@@ -245,7 +246,7 @@ export default function AdminPanel() {
                           onClick={() => window.open(`https://wa.me/${lead.customer?.phone}`, '_blank')}
                           className="px-3 py-1.5 bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 font-medium text-xs rounded-lg transition-colors"
                         >
-                          WP'dan Yaz
+                          WP&apos;dan Yaz
                         </button>
                         <button 
                           onClick={() => handleUpdateStatus(lead.id, 'CONTACTED')}
@@ -279,6 +280,7 @@ export default function AdminPanel() {
                 )}
 
                 {/* RENEWALS TABLO İÇERİĞİ */}
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {activeTab === 'renewals' && renewals.map((policy: any) => (
                   <tr key={policy.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="px-6 py-4">
