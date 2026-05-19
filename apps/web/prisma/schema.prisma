@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUOTE_SENT
+  SOLD
+  LOST
+  RENEWAL_DUE
+}
+
+enum InsuranceType {
+  TRAFFIC
+  KASKO
+  MOTORCYCLE
+  DASK
+  HOME_CONTENT
+  HEALTH
+  BUSINESS
+  FIRE
+}
+
+enum PolicyStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PENDING
+}
+
+enum RenewalStatus {
+  PENDING
+  CONTACTED
+  RENEWED
+  LOST
+}
+
+model Customer {
+  id               String    @id @default(uuid())
+  full_name        String?
+  phone            String    @unique
+  email            String?
+  last_activity_at DateTime?
+  is_archived      Boolean   @default(false)
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  leads    Lead[]
+  policies Policy[]
+
+  @@map("customers")
+}
+
+model Lead {
+  id                 String        @id @default(uuid())
+  tracking_id        String        @unique
+  customer_id        String
+  insurance_category String
+  insurance_type     InsuranceType
+  dynamic_fields     Json
+  utm_source         String?
+  utm_campaign       String?
+  lead_source        String?
+  status             LeadStatus    @default(NEW)
+  notes              String?       @db.Text
+  last_contacted_at  DateTime?
+  next_follow_up_at  DateTime?
+  assigned_to        String?
+  is_archived        Boolean       @default(false)
+  created_at         DateTime      @default(now())
+  updated_at         DateTime      @updatedAt
+
+  customer Customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  policies Policy[]
+
+  @@map("leads")
+}
+
+model Policy {
+  id                   String        @id @default(uuid())
+  policy_number        String        @unique
+  customer_id          String
+  lead_id              String?
+  insurance_type       InsuranceType
+  company_name         String
+  premium_amount       Float
+  start_date           DateTime
+  end_date             DateTime
+  status               PolicyStatus  @default(PENDING)
+  renewal_status       RenewalStatus @default(PENDING)
+  renewal_contacted_at DateTime?
+  document_url         String?
+  mime_type            String?
+  file_size            Int?
+  notes                String?       @db.Text
+  is_archived          Boolean       @default(false)
+  created_at           DateTime      @default(now())
+  updated_at           DateTime      @updatedAt
+
+  customer Customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  lead     Lead?    @relation(fields: [lead_id], references: [id], onDelete: SetNull)
+
+  @@map("policies")
+}
