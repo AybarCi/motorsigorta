@@ -26,7 +26,7 @@ export async function POST(req: Request) {
 
     const year = new Date().getFullYear();
     const random = Math.floor(1000 + Math.random() * 9000);
-    const tracking_id = `TRK-${year}-${random}`;
+    const tracking_id = body.tracking_id || `TRK-${year}-${random}`;
 
     const newLead = await prisma.lead.create({
       data: {

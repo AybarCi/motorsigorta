@@ -146,7 +146,11 @@ export default function LandingPage() {
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
+      const randomNum = Math.floor(1000 + Math.random() * 9000);
+      const trkId = `TRK-${new Date().getFullYear()}-${randomNum}`;
+
       const payload = {
+        tracking_id: trkId,
         insurance_category: selectedCategory,
         insurance_type: selectedType,
         dynamic_fields: data,
@@ -155,13 +159,12 @@ export default function LandingPage() {
         utm_campaign: new URLSearchParams(window.location.search).get("utm_campaign") || "organic",
       };
 
-      const res = await fetch("/api/v1/leads", {
+      // Background request (no await)
+      fetch("/api/v1/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
-      });
-
-      const result = await res.json();
+      }).catch(console.error);
 
       // Meta Pixel: Lead event tracking
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -173,8 +176,6 @@ export default function LandingPage() {
         });
       }
 
-      const trkId = result.traceId || `TRK-${new Date().getFullYear()}-0000`;
-
       const typeLabel = insuranceTypes.find(t => t.id === selectedType && t.category === selectedCategory)?.label || selectedType;
       const dynamicDetail = data.plate || data.city || data.ageGroup || data.sector || "";
 
@@ -184,8 +185,7 @@ export default function LandingPage() {
       window.location.href = whatsappUrl;
     } catch (error) {
       console.error(error);
-    } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Only reset if there's a sync error, otherwise let it navigate
     }
   };
 
@@ -231,7 +231,7 @@ export default function LandingPage() {
         href="https://wa.me/905421778953?text=Merhaba,%20sigorta%20teklifleri%20hakkında%20bilgi%20almak%20istiyorum"
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-50 bg-[#25D366] text-white p-4 rounded-full shadow-[0_0_30px_rgba(37,211,102,0.6)] hover:scale-110 transition-transform duration-300 flex items-center justify-center"
+        className="hidden md:flex fixed bottom-6 right-6 z-50 bg-[#25D366] text-white p-4 rounded-full shadow-[0_0_30px_rgba(37,211,102,0.6)] hover:scale-110 transition-transform duration-300 items-center justify-center"
         onClick={() => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           if (typeof window !== 'undefined' && (window as any).fbq) {
@@ -265,6 +265,20 @@ export default function LandingPage() {
             İhtiyacına en uygun sigorta tekliflerini lisanslı acentelerden hızlıca al, kolayca karşılaştır. <br /><br />
             <span className="font-semibold text-foreground">Sigorta türünü seç → Teklifleri görüntüle → WhatsApp&apos;tan uzmanla görüş</span>
           </p>
+          <div className="flex flex-wrap items-center gap-6 pt-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-300">
+              <ShieldCheck size={18} className="text-primary" />
+              Lisanslı Partnerler
+            </div>
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-300">
+              <Zap size={18} className="text-emerald-400" />
+              Hızlı Teklif Süreci
+            </div>
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-300">
+              <MessageCircle size={18} className="text-[#25D366]" />
+              WhatsApp Destekli
+            </div>
+          </div>
         </motion.div>
 
         <motion.div
@@ -575,6 +589,34 @@ export default function LandingPage() {
           Amaç, kullanıcıları lisanslı acentelerle buluşturarak teklif alma sürecini kolaylaştırmaktır.
         </p>
       </footer>
+
+      {/* Sticky Mobile CTA */}
+      <div className="md:hidden fixed bottom-0 left-0 w-full z-50 bg-background/90 backdrop-blur-xl border-t border-border/50 p-4 flex gap-3 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
+        <button 
+          onClick={() => {
+            formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setStep(1);
+          }}
+          className="flex-1 bg-primary text-primary-foreground font-bold rounded-xl py-3 shadow-lg"
+        >
+          Teklif Al
+        </button>
+        <a 
+          href="https://wa.me/905421778953?text=Merhaba,%20sigorta%20teklifleri%20hakkında%20bilgi%20almak%20istiyorum"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 bg-[#25D366] text-white font-bold rounded-xl py-3 flex items-center justify-center gap-2 shadow-lg"
+          onClick={() => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if (typeof window !== 'undefined' && (window as any).fbq) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (window as any).fbq('track', 'Contact');
+            }
+          }}
+        >
+          <MessageCircle size={18} /> WhatsApp
+        </a>
+      </div>
     </div>
   );
 }
