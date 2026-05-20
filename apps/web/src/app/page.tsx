@@ -582,9 +582,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="py-12 border-t border-border/20 bg-background relative z-10 text-center text-muted-foreground text-sm px-4">
-        <p>© 2026 Sigorta Teklif ve Yönlendirme Platformu. Tüm hakları saklıdır.</p>
-        <p className="mt-2 opacity-70 text-xs max-w-2xl mx-auto">
+      <footer className="py-12 border-t border-border/20 bg-background relative z-10 text-center text-muted-foreground text-sm px-4 pb-28 md:pb-12">
+        <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 mb-6 text-xs font-semibold uppercase tracking-wider">
+          <a href="/legal/kvkk" className="hover:text-primary transition-colors">KVKK Aydınlatma Metni</a>
+          <a href="/legal/gizlilik" className="hover:text-primary transition-colors">Gizlilik Politikası</a>
+          <a href="/legal/cerez" className="hover:text-primary transition-colors">Çerez Politikası</a>
+        </div>
+        <p>© {new Date().getFullYear()} Sigomax Teklif ve Yönlendirme Platformu. Tüm hakları saklıdır.</p>
+        <p className="mt-4 opacity-70 text-xs max-w-2xl mx-auto leading-relaxed">
           Yasal Bilgilendirme: Bu platform bir sigorta şirketi veya acentesi değildir. Sigorta poliçesi düzenleme veya doğrudan satış yapılmaz.
           Amaç, kullanıcıları lisanslı acentelerle buluşturarak teklif alma sürecini kolaylaştırmaktır.
         </p>
