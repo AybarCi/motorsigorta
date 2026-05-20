@@ -23,6 +23,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: false, error: 'Hatalı kullanıcı adı veya şifre' }, { status: 401 });
   } catch (error) {
+    console.error("Login error:", error);
     return NextResponse.json({ success: false, error: 'Sunucu hatası' }, { status: 500 });
   }
 }

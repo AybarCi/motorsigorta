@@ -15,7 +15,7 @@ export default function KVKKPage() {
         
         <h2>1. Veri Sorumlusu</h2>
         <p>
-          Sigomax platformu olarak kişisel verilerinizin güvenliğine önem veriyoruz. Kişisel verileriniz, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca veri sorumlusu sıfatıyla tarafımızca işlenmektedir.
+          Sigomax platformu olarak kişisel verilerinizin güvenliğine önem veriyoruz. Kişisel verileriniz, 6698 sayılı Kişisel Verilerin Korunması Kanunu (&quot;KVKK&quot;) uyarınca veri sorumlusu sıfatıyla tarafımızca işlenmektedir.
         </p>
 
         <h2>2. Kişisel Verilerin Hangi Amaçla İşleneceği</h2>

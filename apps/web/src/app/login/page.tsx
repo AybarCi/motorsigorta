@@ -31,6 +31,7 @@ export default function LoginPage() {
         setError(data.error || "Giriş başarısız oldu.");
       }
     } catch (err) {
+      console.error("Login Error:", err);
       setError("Bağlantı hatası oluştu.");
     } finally {
       setLoading(false);

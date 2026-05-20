@@ -53,7 +53,7 @@ export default async function Image() {
             letterSpacing: '-0.02em',
           }}
         >
-          Türkiye'nin En Hızlı Sigorta Teklif Ağı
+          Türkiye&apos;nin En Hızlı Sigorta Teklif Ağı
         </h1>
         <p
           style={{
