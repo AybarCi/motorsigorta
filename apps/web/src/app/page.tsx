@@ -47,6 +47,10 @@ const insuranceTypes = [
     desc: "Sağlığınız en değerli hazineniz. Anlaşmalı özel hastanelerde fark ücreti ödemeden geniş kapsamlı tedavi imkanına kavuşun."
   },
   {
+    id: "PET", category: "health", label: "Evcil Hayvan Sigortası", image: "/pet_ins.png",
+    desc: "Küçük dostunuzun sağlığını güvence altına alın. Veteriner muayenesi, tedavi ve acil durumlarda yanınızdayız."
+  },
+  {
     id: "BUSINESS", category: "business", label: "İş Yeri & Fabrika", image: "/factory_ins.png",
     desc: "Emeğinizi ve yatırımınızı koruyun. Kobi'lerden fabrikalara kadar tüm ticari varlıklarınızı risklere karşı esnek çözümlerle koruyun."
   },
