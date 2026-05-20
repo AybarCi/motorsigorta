@@ -130,16 +130,6 @@ export default function LandingPage() {
     reset();
     setStep(3);
 
-    // Meta Pixel: InitiateCheckout event when starting to fill the form
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (typeof window !== 'undefined' && (window as any).fbq) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).fbq('track', 'InitiateCheckout', {
-        content_name: id,
-        content_category: selectedCategory
-      });
-    }
-
     setTimeout(() => {
       formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
