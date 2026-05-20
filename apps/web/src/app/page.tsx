@@ -129,6 +129,17 @@ export default function LandingPage() {
     setSelectedType(id);
     reset();
     setStep(3);
+
+    // Meta Pixel: InitiateCheckout event when starting to fill the form
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).fbq('track', 'InitiateCheckout', {
+        content_name: id,
+        content_category: selectedCategory
+      });
+    }
+
     setTimeout(() => {
       formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
@@ -161,6 +172,17 @@ export default function LandingPage() {
       });
 
       const result = await res.json();
+
+      // Meta Pixel: Lead event tracking
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (typeof window !== 'undefined' && (window as any).fbq) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).fbq('track', 'Lead', {
+          content_category: selectedCategory,
+          content_name: selectedType,
+        });
+      }
+
       const trkId = result.traceId || `TRK-${new Date().getFullYear()}-0000`;
 
       const typeLabel = insuranceTypes.find(t => t.id === selectedType && t.category === selectedCategory)?.label || selectedType;
@@ -193,7 +215,19 @@ export default function LandingPage() {
             <Image src="/logo-dark.png" alt="Sigomax Logo" fill className="object-contain object-left" priority />
           </div>
           <div className="hidden md:flex items-center gap-6">
-            <a href="https://wa.me/905421778953" target="_blank" rel="noreferrer" className="text-sm font-semibold px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-all backdrop-blur-md">
+            <a 
+              href="https://wa.me/905421778953" 
+              target="_blank" 
+              rel="noreferrer" 
+              className="text-sm font-semibold px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-all backdrop-blur-md"
+              onClick={() => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                if (typeof window !== 'undefined' && (window as any).fbq) {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  (window as any).fbq('track', 'Contact');
+                }
+              }}
+            >
               Destek
             </a>
             {/* <a href="/admin" className="text-sm font-semibold px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-all backdrop-blur-md">
@@ -208,6 +242,13 @@ export default function LandingPage() {
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 bg-[#25D366] text-white p-4 rounded-full shadow-[0_0_30px_rgba(37,211,102,0.6)] hover:scale-110 transition-transform duration-300 flex items-center justify-center"
+        onClick={() => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if (typeof window !== 'undefined' && (window as any).fbq) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (window as any).fbq('track', 'Contact');
+          }
+        }}
       >
         <MessageCircle size={32} />
       </a>
