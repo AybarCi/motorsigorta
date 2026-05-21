@@ -4,6 +4,14 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/lib/supabase";
 
+const formatWaPhone = (phone?: string) => {
+  if (!phone) return "";
+  const cleaned = phone.replace(/\D/g, "");
+  if (cleaned.startsWith("90")) return cleaned;
+  if (cleaned.startsWith("0")) return "90" + cleaned.substring(1);
+  return "90" + cleaned;
+};
+
 export default function AdminPanel() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [leads, setLeads] = useState<any[]>([]);
@@ -243,7 +251,7 @@ export default function AdminPanel() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 opacity-100 lg:opacity-60 group-hover:opacity-100 transition-opacity">
                         <button 
-                          onClick={() => window.open(`https://wa.me/${lead.customer?.phone}`, '_blank')}
+                          onClick={() => window.open(`https://wa.me/${formatWaPhone(lead.customer?.phone)}`, '_blank')}
                           className="px-3 py-1.5 bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 font-medium text-xs rounded-lg transition-colors"
                         >
                           WP&apos;dan Yaz
@@ -309,7 +317,7 @@ export default function AdminPanel() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button 
-                        onClick={() => window.open(`https://wa.me/${policy.customer?.phone}?text=Merhaba, sigorta poliçenizin süresi dolmak üzere. Yenileme için yardımcı olabilir miyim?`, '_blank')}
+                        onClick={() => window.open(`https://wa.me/${formatWaPhone(policy.customer?.phone)}?text=Merhaba, sigorta poliçenizin süresi dolmak üzere. Yenileme için yardımcı olabilir miyim?`, '_blank')}
                         className="px-4 py-2 bg-slate-900 text-white hover:bg-slate-800 font-medium text-xs rounded-lg shadow-sm transition-colors"
                       >
                         Yenileme Mesajı At
