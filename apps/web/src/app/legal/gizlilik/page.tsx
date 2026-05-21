@@ -1,4 +1,6 @@
 import React from 'react';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 export const metadata = {
   title: 'Gizlilik Politikası | Sigomax',
@@ -7,8 +9,13 @@ export const metadata = {
 export default function GizlilikPage() {
   return (
     <div className="min-h-screen bg-background text-foreground py-20 px-4">
-      <div className="max-w-4xl mx-auto prose prose-invert">
-        <h1 className="text-3xl font-bold mb-8">Gizlilik Politikası</h1>
+      <div className="max-w-4xl mx-auto">
+        <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8">
+          <ArrowLeft className="w-4 h-4" />
+          Ana Sayfaya Dön
+        </Link>
+        <div className="prose prose-invert">
+          <h1 className="text-3xl font-bold mb-8">Gizlilik Politikası</h1>
         <p className="text-muted-foreground mb-4">
           Son Güncelleme: {new Date().toLocaleDateString('tr-TR')}
         </p>
@@ -32,6 +39,7 @@ export default function GizlilikPage() {
         <p>
           Platformumuz, teklif sunan üçüncü taraf acentelere ait bağlantılar içerebilir. Bu sitelerin gizlilik politikalarından platformumuz sorumlu tutulamaz.
         </p>
+        </div>
       </div>
     </div>
   );
