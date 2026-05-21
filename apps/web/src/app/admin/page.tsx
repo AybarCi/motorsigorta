@@ -29,6 +29,21 @@ export default function AdminPanel() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [leadQuotes, setLeadQuotes] = useState<any[]>([]);
   const [isUploadingQuote, setIsUploadingQuote] = useState(false);
+  const [quotePremium, setQuotePremium] = useState("");
+  const [policyPremium, setPolicyPremium] = useState("");
+
+  const formatPremium = (val: string) => {
+    let clean = val.replace(/[^0-9,]/g, '');
+    if(clean.includes(',')) {
+      const parts = clean.split(',');
+      clean = parts[0] + ',' + parts.slice(1).join('').substring(0, 2);
+    }
+    const parts = clean.split(',');
+    if (parts[0]) {
+      parts[0] = parseInt(parts[0], 10).toLocaleString('tr-TR');
+    }
+    return parts.join(',');
+  };
 
   useEffect(() => {
     setCurrentPage(1);
@@ -107,7 +122,7 @@ export default function AdminPanel() {
         lead_id: lead.id,
         insurance_type: lead.insurance_type,
         company_name: formData.get("company_name"),
-        premium_amount: parseFloat(formData.get("premium_amount") as string),
+        premium_amount: parseFloat((formData.get("premium_amount") as string).replace(/\./g, '').replace(',', '.')),
         start_date: new Date().toISOString(),
         end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
         document_url,
@@ -139,6 +154,9 @@ export default function AdminPanel() {
     setIsUploadingQuote(true);
     
     const formData = new FormData(e.currentTarget);
+    const actualPremium = formData.get("premium_display") as string;
+    formData.set("premium", actualPremium.replace(/\./g, '').replace(',', '.'));
+    
     try {
       const res = await fetch(`/api/v1/leads/${quoteModalLeadId}/quotes`, {
         method: "POST",
@@ -147,6 +165,7 @@ export default function AdminPanel() {
       const data = await res.json();
       if(data.success) {
         setLeadQuotes([data.data, ...leadQuotes]);
+        setQuotePremium("");
         (e.target as HTMLFormElement).reset();
       } else {
         alert("Teklif yüklenemedi: " + data.error);
@@ -459,15 +478,15 @@ export default function AdminPanel() {
           <form onSubmit={handleCreatePolicy} className="space-y-5 mt-4">
             <div className="space-y-1.5">
               <label className="text-sm font-semibold text-slate-700">Poliçe Numarası</label>
-              <input name="policy_number" required placeholder="Örn: 123456789" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+              <input name="policy_number" required placeholder="Örn: 123456789" className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-semibold text-slate-700">Sigorta Şirketi</label>
-              <input name="company_name" required placeholder="Örn: AXA, Allianz, Anadolu" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+              <input name="company_name" required placeholder="Örn: AXA, Allianz, Anadolu" className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-semibold text-slate-700">Prim Tutarı (TL)</label>
-              <input name="premium_amount" type="number" required placeholder="Örn: 5000" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+              <input name="premium_amount" type="text" inputMode="decimal" required placeholder="Örn: 5.000,00" value={policyPremium} onChange={e => setPolicyPremium(formatPremium(e.target.value))} className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
             </div>
             <div className="space-y-1.5 bg-slate-50 p-3 rounded-lg border border-slate-200 border-dashed">
               <label className="text-sm font-semibold text-slate-700">Poliçe Dosyası (PDF / JPG)</label>
@@ -495,12 +514,12 @@ export default function AdminPanel() {
               
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700">Sigorta Şirketi</label>
-                <input name="company_name" required placeholder="Örn: Allianz" className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                <input name="company_name" required placeholder="Örn: Allianz" className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700">Prim Tutarı (TL)</label>
-                <input name="premium" type="number" required placeholder="Örn: 5000" className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                <input name="premium_display" type="text" inputMode="decimal" required placeholder="Örn: 5.000,00" value={quotePremium} onChange={e => setQuotePremium(formatPremium(e.target.value))} className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               
               <div className="space-y-1.5">
