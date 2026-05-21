@@ -116,12 +116,37 @@ export default function LandingPage() {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(getSchema() as any),
     shouldUnregister: true,
   });
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, "");
+    if (value.startsWith("90")) {
+      value = value.substring(2);
+    }
+    if (value.length > 0 && !value.startsWith("0")) {
+      value = "0" + value;
+    }
+    if (value.length > 11) {
+      value = value.substring(0, 11);
+    }
+
+    let formattedValue = value;
+    if (value.length > 3 && value.length <= 6) {
+      formattedValue = `${value.slice(0, 4)} ${value.slice(4)}`;
+    } else if (value.length > 6 && value.length <= 8) {
+      formattedValue = `${value.slice(0, 4)} ${value.slice(4, 7)} ${value.slice(7)}`;
+    } else if (value.length > 8) {
+      formattedValue = `${value.slice(0, 4)} ${value.slice(4, 7)} ${value.slice(7, 9)} ${value.slice(9)}`;
+    }
+
+    setValue("phone", formattedValue, { shouldValidate: true, shouldDirty: true });
+  };
 
   const handleSelectCategory = (categoryId: string) => {
     setSelectedCategory(categoryId);
@@ -457,7 +482,7 @@ export default function LandingPage() {
                           type="tel"
                           placeholder="05XX XXX XX XX"
                           className="h-14 text-lg bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl"
-                          {...register("phone")}
+                          {...register("phone", { onChange: handlePhoneChange })}
                         />
                         {errors.phone && <p className="text-destructive text-sm">{errors.phone?.message as string}</p>}
                       </div>
