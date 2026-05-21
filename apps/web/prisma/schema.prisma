@@ -78,6 +78,7 @@ model Lead {
 
   customer Customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)
   policies Policy[]
+  quotes   Quote[]
 
   @@map("leads")
 }
@@ -107,4 +108,18 @@ model Policy {
   lead     Lead?    @relation(fields: [lead_id], references: [id], onDelete: SetNull)
 
   @@map("policies")
+}
+
+model Quote {
+  id           String   @id @default(uuid())
+  lead_id      String
+  company_name String
+  premium      Float
+  file_name    String
+  file_data    Bytes
+  created_at   DateTime @default(now())
+
+  lead Lead @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+
+  @@map("quotes")
 }

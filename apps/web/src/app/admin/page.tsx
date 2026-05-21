@@ -24,6 +24,12 @@ export default function AdminPanel() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
 
+  // New state for Quote Modal
+  const [quoteModalLeadId, setQuoteModalLeadId] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [leadQuotes, setLeadQuotes] = useState<any[]>([]);
+  const [isUploadingQuote, setIsUploadingQuote] = useState(false);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [activeTab, search]);
@@ -111,6 +117,46 @@ export default function AdminPanel() {
     });
     
     window.location.reload();
+  };
+
+  const openQuoteModal = async (leadId: string) => {
+    setQuoteModalLeadId(leadId);
+    setLeadQuotes([]);
+    try {
+      const res = await fetch(`/api/v1/leads/${leadId}/quotes`);
+      const data = await res.json();
+      if(data.success) {
+        setLeadQuotes(data.data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUploadQuote = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if(!quoteModalLeadId) return;
+    setIsUploadingQuote(true);
+    
+    const formData = new FormData(e.currentTarget);
+    try {
+      const res = await fetch(`/api/v1/leads/${quoteModalLeadId}/quotes`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if(data.success) {
+        setLeadQuotes([data.data, ...leadQuotes]);
+        (e.target as HTMLFormElement).reset();
+      } else {
+        alert("Teklif yüklenemedi: " + data.error);
+      }
+    } catch(err) {
+      console.error(err);
+      alert("Bir hata oluştu.");
+    } finally {
+      setIsUploadingQuote(false);
+    }
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -261,6 +307,13 @@ export default function AdminPanel() {
 
                     {/* Footer: Actions */}
                     <div className="grid grid-cols-2 gap-2 mt-auto">
+                      <button 
+                        onClick={() => openQuoteModal(lead.id)}
+                        className="col-span-2 py-2 bg-slate-100 text-slate-800 border border-slate-200 hover:bg-slate-200 font-bold text-xs rounded-lg transition-colors flex items-center justify-center gap-2"
+                      >
+                        Teklif Ekle / Gör
+                      </button>
+
                       <button 
                         onClick={() => window.open(`https://wa.me/${formatWaPhone(lead.customer?.phone)}`, '_blank')}
                         className="col-span-2 py-2 bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 font-bold text-xs rounded-lg transition-colors flex items-center justify-center gap-1"
@@ -425,6 +478,69 @@ export default function AdminPanel() {
               Satışı Onayla ve Kaydet
             </button>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Teklif Modalı */}
+      <Dialog open={!!quoteModalLeadId} onOpenChange={() => setQuoteModalLeadId(null)}>
+        <DialogContent className="bg-white sm:max-w-md p-6 rounded-2xl border border-slate-200 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900">Teklifler</DialogTitle>
+          </DialogHeader>
+          
+          <div className="mt-2 space-y-6">
+            {/* Yeni Teklif Yükleme Formu */}
+            <form onSubmit={handleUploadQuote} className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200 border-dashed">
+              <h4 className="text-sm font-bold text-slate-800">Yeni Teklif Ekle</h4>
+              
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700">Sigorta Şirketi</label>
+                <input name="company_name" required placeholder="Örn: Allianz" className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700">Prim Tutarı (TL)</label>
+                <input name="premium" type="number" required placeholder="Örn: 5000" className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700">Teklif Dosyası (PDF)</label>
+                <input type="file" name="file" accept=".pdf" required className="w-full text-xs text-slate-500 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer" />
+              </div>
+
+              <button type="submit" disabled={isUploadingQuote} className="w-full py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold text-sm rounded-lg shadow-sm transition-colors">
+                {isUploadingQuote ? 'Yükleniyor...' : 'Teklifi Kaydet'}
+              </button>
+            </form>
+
+            {/* Mevcut Teklifler */}
+            <div>
+              <h4 className="text-sm font-bold text-slate-800 mb-3 border-b border-slate-100 pb-2">Müşteriye İletilen Teklifler</h4>
+              {leadQuotes.length === 0 ? (
+                <p className="text-xs text-slate-500 text-center py-4">Henüz bir teklif kaydedilmemiş.</p>
+              ) : (
+                <div className="space-y-2">
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  {leadQuotes.map((q: any) => (
+                    <div key={q.id} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm hover:border-blue-300 transition-colors">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-sm text-slate-900">{q.company_name}</span>
+                        <span className="text-xs text-slate-500">{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(q.premium)}</span>
+                        <span className="text-[10px] text-slate-400 mt-1">{new Date(q.created_at).toLocaleString('tr-TR')}</span>
+                      </div>
+                      <a 
+                        href={`/api/v1/quotes/${q.id}/download`} 
+                        download={q.file_name}
+                        className="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-bold rounded-md transition-colors"
+                      >
+                        İndir (PDF)
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
