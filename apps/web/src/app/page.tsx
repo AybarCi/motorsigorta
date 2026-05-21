@@ -68,6 +68,7 @@ const phoneSchema = z.string().regex(/^05\d{2} \d{3} \d{2} \d{2}$/, "Geçerli bi
 
 type FormValues = {
   phone: string;
+  tc_no?: string;
   plate?: string;
   city?: string;
   ageGroup?: string;
@@ -86,10 +87,17 @@ export default function LandingPage() {
 
   const getSchema = () => {
     if (["TRAFFIC", "KASKO", "MOTORCYCLE"].includes(selectedType || "")) {
-      return z.object({
+      const baseObj = {
         phone: phoneSchema,
         plate: z.string().min(5, "Geçerli plaka girin (Örn: 34ABC123)"),
-      });
+      };
+      if (selectedType === "TRAFFIC") {
+        return z.object({
+          ...baseObj,
+          tc_no: z.string().regex(/^[0-9]{11}$/, "TC Kimlik numarası 11 haneli olmalıdır").optional().or(z.literal('')),
+        });
+      }
+      return z.object(baseObj);
     }
     if (["DASK", "HOME_CONTENT"].includes(selectedType || "") || (selectedType === "FIRE" && selectedCategory === "home")) {
       return z.object({
@@ -424,16 +432,35 @@ export default function LandingPage() {
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                       {["TRAFFIC", "KASKO", "MOTORCYCLE"].includes(selectedType || "") && (
-                        <div className="space-y-2">
-                          <Label htmlFor="plate" className="text-sm font-semibold">Plaka</Label>
-                          <Input
-                            id="plate"
-                            placeholder="34 ABC 123"
-                            className="h-14 text-lg uppercase bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl"
-                            {...register("plate")}
-                          />
-                          {errors.plate && <p className="text-destructive text-sm">{errors.plate?.message as string}</p>}
-                        </div>
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="plate" className="text-sm font-semibold">Plaka</Label>
+                            <Input
+                              id="plate"
+                              placeholder="34 ABC 123"
+                              className="h-14 text-lg uppercase bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl"
+                              {...register("plate")}
+                            />
+                            {errors.plate && <p className="text-destructive text-sm">{errors.plate?.message as string}</p>}
+                          </div>
+
+                          {selectedType === "TRAFFIC" && (
+                            <div className="space-y-2 mt-4">
+                              <Label htmlFor="tc_no" className="text-sm font-semibold">TC Kimlik Numarası (Opsiyonel)</Label>
+                              <Input
+                                id="tc_no"
+                                maxLength={11}
+                                placeholder="11 Haneli TC Kimlik Numaranız"
+                                className="h-14 text-lg bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl"
+                                {...register("tc_no")}
+                              />
+                              <p className="text-xs text-muted-foreground mt-1">
+                                TC Kimlik numaranızı girmeniz durumunda anında fiyat çalışabiliriz.
+                              </p>
+                              {errors.tc_no && <p className="text-destructive text-sm">{errors.tc_no?.message as string}</p>}
+                            </div>
+                          )}
+                        </>
                       )}
 
                       {["DASK", "HOME_CONTENT"].includes(selectedType || "") || (selectedType === "FIRE" && selectedCategory === "home") ? (

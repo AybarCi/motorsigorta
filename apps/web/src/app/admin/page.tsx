@@ -227,6 +227,15 @@ export default function AdminPanel() {
                     <td className="px-6 py-4">
                       <div className="font-semibold text-slate-900">{lead.customer?.phone || "İsimsiz Müşteri"}</div>
                       <div className="text-xs text-slate-500 mt-1">{lead.lead_source || 'Organik Web'}</div>
+                      {lead.dynamic_fields && Object.keys(lead.dynamic_fields).length > 0 && (
+                        <div className="text-xs font-mono text-slate-500 mt-1.5 flex flex-col gap-0.5 border-t border-slate-100 pt-1.5">
+                          {lead.dynamic_fields.tc_no && <span>TC: {lead.dynamic_fields.tc_no}</span>}
+                          {lead.dynamic_fields.plate && <span>Plaka: {lead.dynamic_fields.plate}</span>}
+                          {lead.dynamic_fields.city && <span>Şehir: {lead.dynamic_fields.city}</span>}
+                          {lead.dynamic_fields.ageGroup && <span>Yaş: {lead.dynamic_fields.ageGroup}</span>}
+                          {lead.dynamic_fields.sector && <span>Sektör: {lead.dynamic_fields.sector}</span>}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-slate-700">{new Date(lead.created_at).toLocaleDateString('tr-TR')}</div>
