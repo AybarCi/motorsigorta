@@ -21,6 +21,12 @@ export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState<'leads' | 'renewals'>('leads');
   const [search, setSearch] = useState("");
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, search]);
 
   const thisMonthLeads = leads.filter(l => new Date(l.created_at).getMonth() === new Date().getMonth()).length;
   const thisMonthSales = policies.filter(p => new Date(p.created_at).getMonth() === new Date().getMonth()).length;
@@ -114,12 +120,20 @@ export default function AdminPanel() {
     l.customer?.full_name?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const paginatedLeads = filteredLeads.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalLeadsPages = Math.ceil(filteredLeads.length / itemsPerPage);
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const renewals = policies.map((p: any) => {
     const days = Math.floor((new Date(p.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
     return { ...p, daysLeft: days };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }).filter((p: any) => p.daysLeft >= 0 && p.daysLeft <= 30).sort((a: any, b: any) => a.daysLeft - b.daysLeft);
+
+  const paginatedRenewals = renewals.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalRenewalsPages = Math.ceil(renewals.length / itemsPerPage);
+
+  const totalPages = activeTab === 'leads' ? totalLeadsPages : totalRenewalsPages;
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans pb-20">
@@ -195,59 +209,21 @@ export default function AdminPanel() {
             )}
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
-                  {activeTab === 'leads' ? (
-                    <>
-                      <th className="px-6 py-4 font-semibold">Müşteri</th>
-                      <th className="px-6 py-4 font-semibold">Tarih / ID</th>
-                      <th className="px-6 py-4 font-semibold">Sigorta Türü</th>
-                      <th className="px-6 py-4 font-semibold">Durum</th>
-                      <th className="px-6 py-4 font-semibold text-right">Aksiyonlar</th>
-                    </>
-                  ) : (
-                    <>
-                      <th className="px-6 py-4 font-semibold">Müşteri</th>
-                      <th className="px-6 py-4 font-semibold">Poliçe Tipi</th>
-                      <th className="px-6 py-4 font-semibold">Bitiş Tarihi</th>
-                      <th className="px-6 py-4 font-semibold">Kalan Gün</th>
-                      <th className="px-6 py-4 font-semibold text-right">Aksiyon</th>
-                    </>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                
-                {/* LEADS TABLO İÇERİĞİ */}
+          <div className="mt-4">
+            {/* LEADS KARTLARI */}
+            {activeTab === 'leads' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {activeTab === 'leads' && filteredLeads.map((lead: any) => (
-                  <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-slate-900">{lead.customer?.phone || "İsimsiz Müşteri"}</div>
-                      <div className="text-xs text-slate-500 mt-1">{lead.lead_source || 'Organik Web'}</div>
-                      {lead.dynamic_fields && Object.keys(lead.dynamic_fields).length > 0 && (
-                        <div className="text-xs font-mono text-slate-500 mt-1.5 flex flex-col gap-0.5 border-t border-slate-100 pt-1.5">
-                          {lead.dynamic_fields.tc_no && <span>TC: {lead.dynamic_fields.tc_no}</span>}
-                          {lead.dynamic_fields.plate && <span>Plaka: {lead.dynamic_fields.plate}</span>}
-                          {lead.dynamic_fields.city && <span>Şehir: {lead.dynamic_fields.city}</span>}
-                          {lead.dynamic_fields.ageGroup && <span>Yaş: {lead.dynamic_fields.ageGroup}</span>}
-                          {lead.dynamic_fields.sector && <span>Sektör: {lead.dynamic_fields.sector}</span>}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-slate-700">{new Date(lead.created_at).toLocaleDateString('tr-TR')}</div>
-                      <div className="text-xs font-mono text-slate-400 mt-1">{lead.tracking_id}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
-                        {lead.insurance_type}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-bold ${
+                {paginatedLeads.map((lead: any) => (
+                  <div key={lead.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-shadow flex flex-col h-full">
+                    
+                    {/* Header: Phone & Status */}
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="font-bold text-lg text-slate-900">{lead.customer?.phone || "İsimsiz Müşteri"}</h3>
+                        <p className="text-xs text-slate-500 mt-0.5">{lead.lead_source || 'Organik Web'}</p>
+                      </div>
+                      <span className={`inline-flex px-2 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider ${
                         lead.status === 'NEW' ? 'bg-orange-100 text-orange-700' :
                         lead.status === 'CONTACTED' ? 'bg-purple-100 text-purple-700' :
                         lead.status === 'QUOTE_SENT' ? 'bg-yellow-100 text-yellow-700' :
@@ -256,95 +232,167 @@ export default function AdminPanel() {
                       }`}>
                         {lead.status}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-100 lg:opacity-60 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          onClick={() => window.open(`https://wa.me/${formatWaPhone(lead.customer?.phone)}`, '_blank')}
-                          className="px-3 py-1.5 bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 font-medium text-xs rounded-lg transition-colors"
-                        >
-                          WP&apos;dan Yaz
-                        </button>
-                        <button 
-                          onClick={() => handleUpdateStatus(lead.id, 'CONTACTED')}
-                          className="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium text-xs rounded-lg transition-colors"
-                        >
-                          Arandı
-                        </button>
-                        <button 
-                          onClick={() => handleUpdateStatus(lead.id, 'QUOTE_SENT')}
-                          className="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium text-xs rounded-lg transition-colors"
-                        >
-                          Teklif
-                        </button>
-                        <button 
-                          onClick={() => setSelectedLeadId(lead.id)}
-                          className="px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 font-medium text-xs rounded-lg shadow-sm transition-colors"
-                        >
-                          Satıldı
-                        </button>
+                    </div>
+
+                    {/* Middle: Details */}
+                    <div className="flex-1 space-y-3 mb-5 border-t border-b border-slate-100 py-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-slate-500">Tür</span>
+                        <span className="inline-flex px-2 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
+                          {lead.insurance_type}
+                        </span>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-
-                {activeTab === 'leads' && filteredLeads.length === 0 && !loading && (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                      Hiç talep bulunmuyor veya arama sonucu boş.
-                    </td>
-                  </tr>
-                )}
-
-                {/* RENEWALS TABLO İÇERİĞİ */}
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {activeTab === 'renewals' && renewals.map((policy: any) => (
-                  <tr key={policy.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-slate-900">{policy.customer?.phone}</div>
-                      <div className="text-xs text-slate-500 mt-1">{policy.policy_number}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                        {policy.insurance_type}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-slate-700">{new Date(policy.end_date).toLocaleDateString('tr-TR')}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {policy.daysLeft <= 7 ? (
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-700 font-bold text-xs shadow-[0_0_15px_rgba(239,68,68,0.4)]">
-                          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                          {policy.daysLeft} Gün Kaldı (Acil)
-                        </div>
-                      ) : (
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-700 font-bold text-xs">
-                          {policy.daysLeft} Gün Kaldı
+                      
+                      {lead.dynamic_fields && Object.keys(lead.dynamic_fields).length > 0 && (
+                        <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-slate-50 border-dashed">
+                          {lead.dynamic_fields.tc_no && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">TC:</span><br/>{lead.dynamic_fields.tc_no}</div>}
+                          {lead.dynamic_fields.plate && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Plaka:</span><br/><span className="uppercase">{lead.dynamic_fields.plate}</span></div>}
+                          {lead.dynamic_fields.city && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Şehir:</span><br/>{lead.dynamic_fields.city}</div>}
+                          {lead.dynamic_fields.ageGroup && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Yaş:</span><br/>{lead.dynamic_fields.ageGroup}</div>}
+                          {lead.dynamic_fields.sector && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Sektör:</span><br/>{lead.dynamic_fields.sector}</div>}
                         </div>
                       )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
+                      
+                      <div className="flex items-center justify-between pt-2">
+                        <span className="text-[10px] text-slate-400 font-mono">{lead.tracking_id}</span>
+                        <span className="text-[10px] text-slate-400">{new Date(lead.created_at).toLocaleDateString('tr-TR')}</span>
+                      </div>
+                    </div>
+
+                    {/* Footer: Actions */}
+                    <div className="grid grid-cols-2 gap-2 mt-auto">
+                      <button 
+                        onClick={() => window.open(`https://wa.me/${formatWaPhone(lead.customer?.phone)}`, '_blank')}
+                        className="col-span-2 py-2 bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 font-bold text-xs rounded-lg transition-colors flex items-center justify-center gap-1"
+                      >
+                        WhatsApp&apos;tan Yaz
+                      </button>
+                      
+                      {lead.status !== 'CONTACTED' && lead.status !== 'QUOTE_SENT' && lead.status !== 'SOLD' && (
+                        <button 
+                          onClick={() => handleUpdateStatus(lead.id, 'CONTACTED')}
+                          className="py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium text-xs rounded-lg transition-colors"
+                        >
+                          Arandı Yap
+                        </button>
+                      )}
+                      
+                      {lead.status !== 'QUOTE_SENT' && lead.status !== 'SOLD' && (
+                        <button 
+                          onClick={() => handleUpdateStatus(lead.id, 'QUOTE_SENT')}
+                          className="py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium text-xs rounded-lg transition-colors"
+                        >
+                          Teklif İletildi
+                        </button>
+                      )}
+
+                      {lead.status !== 'SOLD' && (
+                        <button 
+                          onClick={() => setSelectedLeadId(lead.id)}
+                          className={`${lead.status === 'QUOTE_SENT' ? 'col-span-2' : ''} py-2 bg-blue-600 text-white hover:bg-blue-700 font-bold text-xs rounded-lg shadow-sm transition-colors`}
+                        >
+                          Satıldı (Poliçe)
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {activeTab === 'leads' && filteredLeads.length === 0 && !loading && (
+              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500">
+                Hiç talep bulunmuyor veya arama sonucu boş.
+              </div>
+            )}
+
+            {/* RENEWALS KARTLARI */}
+            {activeTab === 'renewals' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {paginatedRenewals.map((policy: any) => (
+                  <div key={policy.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-shadow flex flex-col h-full">
+                    
+                    {/* Header */}
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="font-bold text-lg text-slate-900">{policy.customer?.phone}</h3>
+                        <p className="text-xs text-slate-500 font-mono mt-0.5">{policy.policy_number}</p>
+                      </div>
+                      <span className="inline-flex px-2 py-1 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                        {policy.insurance_type}
+                      </span>
+                    </div>
+
+                    {/* Middle */}
+                    <div className="flex-1 flex flex-col justify-center items-center py-6 border-t border-b border-slate-100 mb-5">
+                      {policy.daysLeft <= 7 ? (
+                        <div className="inline-flex flex-col items-center justify-center w-24 h-24 rounded-full bg-red-50 border-4 border-red-100 text-red-700 shadow-[0_0_20px_rgba(239,68,68,0.3)] relative">
+                          <span className="absolute top-1 right-1 w-3 h-3 rounded-full bg-red-500 animate-pulse border-2 border-white"></span>
+                          <span className="text-3xl font-black leading-none">{policy.daysLeft}</span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider mt-1">Gün Kaldı</span>
+                        </div>
+                      ) : (
+                        <div className="inline-flex flex-col items-center justify-center w-24 h-24 rounded-full bg-yellow-50 border-4 border-yellow-100 text-yellow-700">
+                          <span className="text-3xl font-black leading-none">{policy.daysLeft}</span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider mt-1">Gün Kaldı</span>
+                        </div>
+                      )}
+                      <p className="text-xs text-slate-500 mt-4 font-medium">
+                        Bitiş: {new Date(policy.end_date).toLocaleDateString('tr-TR')}
+                      </p>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="mt-auto">
                       <button 
                         onClick={() => window.open(`https://wa.me/${formatWaPhone(policy.customer?.phone)}?text=Merhaba, sigorta poliçenizin süresi dolmak üzere. Yenileme için yardımcı olabilir miyim?`, '_blank')}
-                        className="px-4 py-2 bg-slate-900 text-white hover:bg-slate-800 font-medium text-xs rounded-lg shadow-sm transition-colors"
+                        className="w-full py-3 bg-slate-900 text-white hover:bg-slate-800 font-bold text-xs rounded-xl shadow-sm transition-colors"
                       >
                         Yenileme Mesajı At
                       </button>
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 ))}
+              </div>
+            )}
 
-                {activeTab === 'renewals' && renewals.length === 0 && !loading && (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                      Yaklaşan yenileme fırsatı bulunmuyor.
-                    </td>
-                  </tr>
-                )}
-
-              </tbody>
-            </table>
+            {activeTab === 'renewals' && renewals.length === 0 && !loading && (
+              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500">
+                Yaklaşan yenileme fırsatı bulunmuyor.
+              </div>
+            )}
+            
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8 pb-4">
+                <button 
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
+                >
+                  Önceki
+                </button>
+                <div className="flex items-center gap-1 px-2">
+                  {[...Array(totalPages)].map((_, i) => (
+                    <button
+                      key={i + 1}
+                      onClick={() => setCurrentPage(i + 1)}
+                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === i + 1 ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+                <button 
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
+                >
+                  Sonraki
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
