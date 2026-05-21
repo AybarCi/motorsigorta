@@ -64,7 +64,7 @@ const insuranceTypes = [
   },
 ];
 
-const phoneSchema = z.string().min(10, "Geçerli bir telefon numarası girin (Örn: 05XX1234567)");
+const phoneSchema = z.string().regex(/^05\d{2} \d{3} \d{2} \d{2}$/, "Geçerli bir telefon numarası girin (Örn: 05XX XXX XX XX)");
 
 type FormValues = {
   phone: string;
