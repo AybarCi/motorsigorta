@@ -310,8 +310,8 @@ export default function AdminPanel() {
                     {/* Header: Phone & Status */}
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        <h3 className="font-bold text-lg text-slate-900">{lead.customer?.phone || "İsimsiz Müşteri"}</h3>
-                        <p className="text-xs text-slate-500 mt-0.5">{lead.lead_source || 'Organik Web'}</p>
+                        <h3 className="font-bold text-lg text-slate-900">{lead.customer?.full_name || "İsimsiz Müşteri"}</h3>
+                        <p className="text-xs text-slate-500 mt-0.5 font-medium">{formatWaPhone(lead.customer?.phone).replace(/^90/, '0')} • {lead.lead_source || 'Organik Web'}</p>
                       </div>
                       <span className={`inline-flex px-2 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider ${
                         lead.status === 'NEW' ? 'bg-orange-100 text-orange-700' :
