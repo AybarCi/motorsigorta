@@ -178,6 +178,23 @@ export default function AdminPanel() {
     }
   };
 
+  const handleDeleteQuote = async (quoteId: string) => {
+    if (!confirm("Bu teklifi silmek istediğinize emin misiniz?")) return;
+    try {
+      const res = await fetch(`/api/v1/quotes/${quoteId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        setLeadQuotes(leadQuotes.filter(q => q.id !== quoteId));
+      } else {
+        alert("Teklif silinemedi.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Bir hata oluştu.");
+    }
+  };
+
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const filteredLeads = leads.filter((l: any) => 
     l.customer?.phone?.includes(search) || 
@@ -547,13 +564,21 @@ export default function AdminPanel() {
                         <span className="text-xs text-slate-500">{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(q.premium)}</span>
                         <span className="text-[10px] text-slate-400 mt-1">{new Date(q.created_at).toLocaleString('tr-TR')}</span>
                       </div>
-                      <a 
-                        href={`/api/v1/quotes/${q.id}/download`} 
-                        download={q.file_name}
-                        className="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-bold rounded-md transition-colors"
-                      >
-                        İndir (PDF)
-                      </a>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleDeleteQuote(q.id)}
+                          className="px-2 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 text-xs font-bold rounded-md transition-colors"
+                        >
+                          Sil
+                        </button>
+                        <a 
+                          href={`/api/v1/quotes/${q.id}/download`} 
+                          download={q.file_name}
+                          className="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-bold rounded-md transition-colors"
+                        >
+                          İndir (PDF)
+                        </a>
+                      </div>
                     </div>
                   ))}
                 </div>
