@@ -167,6 +167,14 @@ export default function AdminPanel() {
         setLeadQuotes([data.data, ...leadQuotes]);
         setQuotePremium("");
         (e.target as HTMLFormElement).reset();
+        
+        const customerName = formData.get("customer_full_name") as string;
+        if (customerName) {
+          setLeads(prev => prev.map(l => l.id === quoteModalLeadId ? {
+            ...l,
+            customer: { ...l.customer, full_name: customerName }
+          } : l));
+        }
       } else {
         alert("Teklif yüklenemedi: " + data.error);
       }
@@ -528,6 +536,11 @@ export default function AdminPanel() {
             {/* Yeni Teklif Yükleme Formu */}
             <form onSubmit={handleUploadQuote} className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200 border-dashed">
               <h4 className="text-sm font-bold text-slate-800">Yeni Teklif Ekle</h4>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700">Müşteri Ad Soyad</label>
+                <input name="customer_full_name" defaultValue={leads.find(l => l.id === quoteModalLeadId)?.customer?.full_name || ""} placeholder="Örn: Ahmet Yılmaz" className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
               
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700">Sigorta Şirketi</label>

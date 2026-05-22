@@ -34,12 +34,26 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const company_name = formData.get('company_name') as string;
     const premiumStr = formData.get('premium') as string;
     const file = formData.get('file') as File;
+    const customer_full_name = formData.get('customer_full_name') as string;
 
     if (!company_name || !premiumStr || !file) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
     const premium = parseFloat(premiumStr);
+    
+    if (customer_full_name) {
+      const lead = await prisma.lead.findUnique({
+        where: { id },
+        select: { customer_id: true }
+      });
+      if (lead) {
+        await prisma.customer.update({
+          where: { id: lead.customer_id },
+          data: { full_name: customer_full_name }
+        });
+      }
+    }
     
     // Convert File to Buffer/Bytes
     const arrayBuffer = await file.arrayBuffer();
