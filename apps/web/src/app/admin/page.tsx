@@ -317,6 +317,12 @@ export default function AdminPanel() {
           setEditingQuote(null);
         } else {
           setLeadQuotes([data.data, ...leadQuotes]);
+          
+          // Automatically update lead status in local state to QUOTE_SENT
+          setLeads(prev => prev.map(l => l.id === quoteModalLeadId ? {
+            ...l,
+            status: 'QUOTE_SENT'
+          } : l));
         }
         setQuotePremium("");
         (e.target as HTMLFormElement).reset();
@@ -388,6 +394,25 @@ export default function AdminPanel() {
     const encodedText = encodeURIComponent(message);
     const waUrl = `https://wa.me/${formatWaPhone(customerPhone)}?text=${encodedText}`;
     window.open(waUrl, '_blank');
+
+    // Automatically update lead status to QUOTE_SENT on backend and frontend if not already SOLD
+    if (currentLead.status !== 'SOLD' && currentLead.status !== 'QUOTE_SENT') {
+      fetch(`/api/v1/leads/${quoteModalLeadId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "QUOTE_SENT" }),
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setLeads(prev => prev.map(l => l.id === quoteModalLeadId ? {
+            ...l,
+            status: 'QUOTE_SENT'
+          } : l));
+        }
+      })
+      .catch(err => console.error("Error updating status on share:", err));
+    }
   };
 
 
@@ -579,7 +604,7 @@ export default function AdminPanel() {
                         WhatsApp&apos;tan Yaz
                       </button>
                       
-                      {lead.status !== 'CONTACTED' && lead.status !== 'QUOTE_SENT' && lead.status !== 'SOLD' && (
+                      {lead.status === 'NEW' && (
                         <button 
                           onClick={() => handleUpdateStatus(lead.id, 'CONTACTED')}
                           className="py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium text-xs rounded-lg transition-colors"
@@ -587,20 +612,11 @@ export default function AdminPanel() {
                           Arandı Yap
                         </button>
                       )}
-                      
-                      {lead.status !== 'QUOTE_SENT' && lead.status !== 'SOLD' && (
-                        <button 
-                          onClick={() => handleUpdateStatus(lead.id, 'QUOTE_SENT')}
-                          className="py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium text-xs rounded-lg transition-colors"
-                        >
-                          Teklif İletildi
-                        </button>
-                      )}
 
                       {lead.status !== 'SOLD' && (
                         <button 
                           onClick={() => setSelectedLeadId(lead.id)}
-                          className={`${lead.status === 'QUOTE_SENT' ? 'col-span-2' : ''} py-2 bg-blue-600 text-white hover:bg-blue-700 font-bold text-xs rounded-lg shadow-sm transition-colors`}
+                          className={`${lead.status !== 'NEW' ? 'col-span-2' : ''} py-2 bg-blue-600 text-white hover:bg-blue-700 font-bold text-xs rounded-lg shadow-sm transition-colors`}
                         >
                           Satıldı (Poliçe)
                         </button>

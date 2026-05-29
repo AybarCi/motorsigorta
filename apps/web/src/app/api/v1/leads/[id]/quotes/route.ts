@@ -80,6 +80,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       },
     });
 
+    // Automatically update lead status to QUOTE_SENT
+    await prisma.lead.update({
+      where: { id },
+      data: { status: 'QUOTE_SENT' },
+    });
+
     return NextResponse.json({ 
       success: true, 
       data: {
