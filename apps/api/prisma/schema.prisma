@@ -21,6 +21,7 @@ enum InsuranceType {
   HEALTH
   BUSINESS
   FIRE
+  TRAVEL
 }
 
 model Lead {

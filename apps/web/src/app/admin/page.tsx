@@ -30,7 +30,148 @@ export default function AdminPanel() {
   const [leadQuotes, setLeadQuotes] = useState<any[]>([]);
   const [isUploadingQuote, setIsUploadingQuote] = useState(false);
   const [quotePremium, setQuotePremium] = useState("");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [editingQuote, setEditingQuote] = useState<any | null>(null);
   const [policyPremium, setPolicyPremium] = useState("");
+
+  // Manuel Talep Ekleme State'leri
+  const [isCreateLeadOpen, setIsCreateLeadOpen] = useState(false);
+  const [manualCategory, setManualCategory] = useState("vehicle");
+  const [manualType, setManualType] = useState("TRAFFIC");
+  const [isCreatingLead, setIsCreatingLead] = useState(false);
+  const [manualHasPreviousPolicy, setManualHasPreviousPolicy] = useState("no");
+  const [manualHealthInsuredFor, setManualHealthInsuredFor] = useState("myself");
+  const [manualHealthPlanType, setManualHealthPlanType] = useState("inpatient_only");
+  const [manualHealthPolicyStatus, setManualHealthPolicyStatus] = useState("new_policy");
+
+  // Seyahat Sağlık Sigortası State'leri
+  const [manualTravelCitizenship, setManualTravelCitizenship] = useState("tc");
+  const [manualTravelPassportNo, setManualTravelPassportNo] = useState("");
+  const [manualTravelNationality, setManualTravelNationality] = useState("");
+  const [manualTravelBirthDate, setManualTravelBirthDate] = useState("");
+  const [manualTravelBirthPlace, setManualTravelBirthPlace] = useState("");
+  const [manualTravelGender, setManualTravelGender] = useState("male");
+  const [manualTravelAddress, setManualTravelAddress] = useState("");
+  const [manualTravelDepartureDate, setManualTravelDepartureDate] = useState("");
+  const [manualTravelReturnDate, setManualTravelReturnDate] = useState("");
+  const [manualTravelReason, setManualTravelReason] = useState("Turistik Gezi");
+  const [manualTravelRegion, setManualTravelRegion] = useState("Avrupa Schengen");
+  const [manualTravelCountry, setManualTravelCountry] = useState("");
+
+  const insuranceCategories = [
+    { id: "vehicle", label: "Araç Sigortaları" },
+    { id: "home", label: "Ev & Konut" },
+    { id: "health", label: "Sağlık" },
+    { id: "business", label: "Kurumsal" },
+  ];
+
+  const insuranceTypes = [
+    { id: "TRAFFIC", category: "vehicle", label: "Trafik Sigortası" },
+    { id: "KASKO", category: "vehicle", label: "Genişletilmiş Kasko" },
+    { id: "MOTORCYCLE", category: "vehicle", label: "Motosiklet Sigortası" },
+    { id: "DASK", category: "home", label: "Zorunlu Deprem (DASK)" },
+    { id: "HOME_CONTENT", category: "home", label: "Ev & Eşya Sigortası" },
+    { id: "FIRE", category: "home", label: "Ev Yangın Sigortası" },
+    { id: "HEALTH", category: "health", label: "Özel & Tamamlayıcı Sağlık" },
+    { id: "PET", category: "health", label: "Evcil Hayvan Sigortası" },
+    { id: "TRAVEL", category: "health", label: "Seyahat Sağlık Sigortası" },
+    { id: "BUSINESS", category: "business", label: "İş Yeri & Fabrika" },
+    { id: "FIRE", category: "business", label: "İş Yeri Yangın Sigortası" },
+  ];
+
+  const handleCategoryChange = (catId: string) => {
+    setManualCategory(catId);
+    const firstType = insuranceTypes.find(t => t.category === catId);
+    if (firstType) {
+      setManualType(firstType.id);
+    }
+    setManualHasPreviousPolicy("no");
+    setManualHealthInsuredFor("myself");
+    setManualHealthPlanType("inpatient_only");
+    setManualHealthPolicyStatus("new_policy");
+  };
+
+  const handleCreateLead = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsCreatingLead(true);
+
+    const formData = new FormData(e.currentTarget);
+    const phone = formData.get("phone") as string;
+    const full_name = formData.get("full_name") as string;
+    const lead_source = formData.get("lead_source") as string;
+
+    const dynamic_fields: Record<string, string> = {};
+    if (manualCategory === "vehicle") {
+      dynamic_fields.plate = (formData.get("plate") as string)?.toUpperCase();
+      dynamic_fields.tc_no = formData.get("tc_no") as string;
+      dynamic_fields.document_no = (formData.get("document_no") as string)?.toUpperCase();
+    } else if (manualCategory === "home") {
+      dynamic_fields.city = formData.get("city") as string;
+      if (["DASK", "HOME_CONTENT"].includes(manualType)) {
+        dynamic_fields.tc_no = formData.get("tc_no") as string;
+        dynamic_fields.has_previous_policy = manualHasPreviousPolicy;
+        if (manualHasPreviousPolicy === "yes") {
+          dynamic_fields.previous_policy_number = formData.get("previous_policy_number") as string;
+        }
+      }
+    } else if (manualCategory === "health") {
+      dynamic_fields.ageGroup = formData.get("ageGroup") as string;
+      if (manualType === "HEALTH") {
+        dynamic_fields.tc_no = formData.get("tc_no") as string;
+        dynamic_fields.health_insured_for = manualHealthInsuredFor;
+        dynamic_fields.health_plan_type = manualHealthPlanType;
+        dynamic_fields.health_policy_status = manualHealthPolicyStatus;
+      } else if (manualType === "TRAVEL") {
+        dynamic_fields.travel_citizenship = manualTravelCitizenship;
+        dynamic_fields.full_name = full_name; // Sync main full_name field
+        if (manualTravelCitizenship === "tc") {
+          dynamic_fields.tc_no = formData.get("tc_no") as string;
+        } else {
+          dynamic_fields.passport_no = manualTravelPassportNo;
+          dynamic_fields.nationality = manualTravelNationality;
+          dynamic_fields.birth_date = manualTravelBirthDate;
+          dynamic_fields.birth_place = manualTravelBirthPlace;
+          dynamic_fields.gender = manualTravelGender;
+          dynamic_fields.address = manualTravelAddress;
+        }
+        dynamic_fields.departure_date = manualTravelDepartureDate;
+        dynamic_fields.return_date = manualTravelReturnDate;
+        dynamic_fields.travel_reason = manualTravelReason;
+        dynamic_fields.travel_region = manualTravelRegion;
+        dynamic_fields.travel_country = manualTravelCountry;
+      }
+    } else if (manualCategory === "business") {
+      dynamic_fields.sector = formData.get("sector") as string;
+    }
+
+    try {
+      const res = await fetch("/api/v1/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone,
+          full_name,
+          insurance_category: manualCategory,
+          insurance_type: manualType,
+          lead_source,
+          dynamic_fields,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setIsCreateLeadOpen(false);
+        window.location.reload();
+      } else {
+        alert("Talep oluşturulamadı: " + data.error);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Bir hata oluştu.");
+    } finally {
+      setIsCreatingLead(false);
+    }
+  };
 
   const formatPremium = (val: string) => {
     let clean = val.replace(/[^0-9,]/g, '');
@@ -137,6 +278,8 @@ export default function AdminPanel() {
   const openQuoteModal = async (leadId: string) => {
     setQuoteModalLeadId(leadId);
     setLeadQuotes([]);
+    setEditingQuote(null);
+    setQuotePremium("");
     try {
       const res = await fetch(`/api/v1/leads/${leadId}/quotes`);
       const data = await res.json();
@@ -158,13 +301,23 @@ export default function AdminPanel() {
     formData.set("premium", actualPremium.replace(/\./g, '').replace(',', '.'));
     
     try {
-      const res = await fetch(`/api/v1/leads/${quoteModalLeadId}/quotes`, {
-        method: "POST",
+      const url = editingQuote 
+        ? `/api/v1/quotes/${editingQuote.id}` 
+        : `/api/v1/leads/${quoteModalLeadId}/quotes`;
+      const method = editingQuote ? "PATCH" : "POST";
+
+      const res = await fetch(url, {
+        method,
         body: formData,
       });
       const data = await res.json();
       if(data.success) {
-        setLeadQuotes([data.data, ...leadQuotes]);
+        if (editingQuote) {
+          setLeadQuotes(leadQuotes.map(q => q.id === editingQuote.id ? data.data : q));
+          setEditingQuote(null);
+        } else {
+          setLeadQuotes([data.data, ...leadQuotes]);
+        }
         setQuotePremium("");
         (e.target as HTMLFormElement).reset();
         
@@ -176,7 +329,7 @@ export default function AdminPanel() {
           } : l));
         }
       } else {
-        alert("Teklif yüklenemedi: " + data.error);
+        alert("Teklif kaydedilemedi: " + data.error);
       }
     } catch(err) {
       console.error(err);
@@ -200,6 +353,41 @@ export default function AdminPanel() {
       console.error(err);
       alert("Bir hata oluştu.");
     }
+  };
+
+  const handleShareQuotesWhatsApp = () => {
+    if (!quoteModalLeadId || leadQuotes.length === 0) return;
+    const currentLead = leads.find(l => l.id === quoteModalLeadId);
+    if (!currentLead) return;
+
+    const customerName = currentLead.customer?.full_name || "Değerli Müşterimiz";
+    const customerPhone = currentLead.customer?.phone;
+    const trackingId = currentLead.tracking_id;
+    const typeLabel = insuranceTypes.find(t => t.id === currentLead.insurance_type)?.label || "Sigorta Teklifi";
+
+    let message = `Merhaba *${customerName}*,\n\n`;
+    message += `*${typeLabel}* talebiniz (*#${trackingId}*) için hazırlamış olduğumuz teklif alternatifleri aşağıda yer almaktadır:\n\n`;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    leadQuotes.forEach((q: any, index: number) => {
+      message += `*${index + 1}. Teklif Alternatifi*\n`;
+      message += `🏢 *Şirket:* ${q.company_name}\n`;
+      message += `💵 *Prim Tutarı:* ${new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(q.premium)}\n`;
+      if (q.installments) {
+        message += `💳 *Ödeme:* ${q.installments}\n`;
+      }
+      if (q.notes) {
+        message += `📝 *Not/Uyarı:* ${q.notes}\n`;
+      }
+      message += `----------------------------------\n\n`;
+    });
+
+    message += `Sizin için en uygun teklifi onaylamak veya detayları görüşmek için bu mesaj üzerinden bizimle iletişime geçebilirsiniz.\n\n`;
+    message += `İyi günler dileriz! 😊`;
+
+    const encodedText = encodeURIComponent(message);
+    const waUrl = `https://wa.me/${formatWaPhone(customerPhone)}?text=${encodedText}`;
+    window.open(waUrl, '_blank');
   };
 
 
@@ -289,13 +477,21 @@ export default function AdminPanel() {
               {activeTab === 'leads' ? 'Aktif Talepler' : 'Yenileme Radarı'}
             </h2>
             {activeTab === 'leads' && (
-              <input 
-                type="text"
-                placeholder="Telefon, Plaka veya TRK ID ara..." 
-                className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm w-72 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
+              <div className="flex items-center gap-3">
+                <input 
+                  type="text"
+                  placeholder="Telefon, Plaka veya TRK ID ara..." 
+                  className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm w-72 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+                <button
+                  onClick={() => setIsCreateLeadOpen(true)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-lg shadow-sm transition-colors"
+                >
+                  Yeni Talep Ekle
+                </button>
+              </div>
             )}
           </div>
 
@@ -336,10 +532,28 @@ export default function AdminPanel() {
                       {lead.dynamic_fields && Object.keys(lead.dynamic_fields).length > 0 && (
                         <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-slate-50 border-dashed">
                           {lead.dynamic_fields.tc_no && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">TC:</span><br/>{lead.dynamic_fields.tc_no}</div>}
+                          {lead.dynamic_fields.document_no && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Belge No:</span><br/><span className="uppercase">{lead.dynamic_fields.document_no}</span></div>}
                           {lead.dynamic_fields.plate && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Plaka:</span><br/><span className="uppercase">{lead.dynamic_fields.plate}</span></div>}
                           {lead.dynamic_fields.city && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Şehir:</span><br/>{lead.dynamic_fields.city}</div>}
                           {lead.dynamic_fields.ageGroup && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Yaş:</span><br/>{lead.dynamic_fields.ageGroup}</div>}
                           {lead.dynamic_fields.sector && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Sektör:</span><br/>{lead.dynamic_fields.sector}</div>}
+                          {lead.dynamic_fields.has_previous_policy && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Eski Poliçe:</span><br/>{lead.dynamic_fields.has_previous_policy === "yes" ? "Evet var" : "Hayır yok"}</div>}
+                          {lead.dynamic_fields.previous_policy_number && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Eski Poliçe No:</span><br/>{lead.dynamic_fields.previous_policy_number}</div>}
+                          {lead.dynamic_fields.health_insured_for && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Kimin İçin:</span><br/>{lead.dynamic_fields.health_insured_for === "myself" ? "Kendim İçin" : "Ailem İçin"}</div>}
+                          {lead.dynamic_fields.health_plan_type && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Plan:</span><br/>{lead.dynamic_fields.health_plan_type === "inpatient_only" ? "Sadece Yatarak" : "Yatarak + Ayakta"}</div>}
+                          {lead.dynamic_fields.health_policy_status && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Poliçe Durumu:</span><br/>{lead.dynamic_fields.health_policy_status === "new_policy" ? "Yeni İş" : "Transfer / Geçiş"}</div>}
+                          {lead.dynamic_fields.travel_citizenship && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Vatandaşlık:</span><br/>{lead.dynamic_fields.travel_citizenship === "tc" ? "TC Vatandaşı" : "Pasaport / Yabancı"}</div>}
+                          {lead.dynamic_fields.passport_no && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Pasaport No:</span><br/><span className="uppercase">{lead.dynamic_fields.passport_no}</span></div>}
+                          {lead.dynamic_fields.nationality && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Uyruk:</span><br/>{lead.dynamic_fields.nationality}</div>}
+                          {lead.dynamic_fields.birth_date && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Doğum Tarihi:</span><br/>{lead.dynamic_fields.birth_date}</div>}
+                          {lead.dynamic_fields.birth_place && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Doğum Yeri:</span><br/>{lead.dynamic_fields.birth_place}</div>}
+                          {lead.dynamic_fields.gender && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Cinsiyet:</span><br/>{lead.dynamic_fields.gender === "male" ? "Erkek" : "Kadın"}</div>}
+                          {lead.dynamic_fields.address && <div className="text-xs text-slate-600 col-span-2"><span className="text-slate-400 font-medium">Adres:</span><br/>{lead.dynamic_fields.address}</div>}
+                          {lead.dynamic_fields.departure_date && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Gidiş Tarihi:</span><br/>{lead.dynamic_fields.departure_date}</div>}
+                          {lead.dynamic_fields.return_date && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Dönüş Tarihi:</span><br/>{lead.dynamic_fields.return_date}</div>}
+                          {lead.dynamic_fields.travel_reason && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Sebep:</span><br/>{lead.dynamic_fields.travel_reason}</div>}
+                          {lead.dynamic_fields.travel_region && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Bölge:</span><br/>{lead.dynamic_fields.travel_region}</div>}
+                          {lead.dynamic_fields.travel_country && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Ülke:</span><br/>{lead.dynamic_fields.travel_country}</div>}
                         </div>
                       )}
                       
@@ -526,7 +740,7 @@ export default function AdminPanel() {
       </Dialog>
 
       {/* Teklif Modalı */}
-      <Dialog open={!!quoteModalLeadId} onOpenChange={() => setQuoteModalLeadId(null)}>
+      <Dialog open={!!quoteModalLeadId} onOpenChange={(open) => { if (!open) { setQuoteModalLeadId(null); setEditingQuote(null); setQuotePremium(""); } }}>
         <DialogContent className="bg-white sm:max-w-md p-6 rounded-2xl border border-slate-200 shadow-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-slate-900">Teklifler</DialogTitle>
@@ -534,8 +748,14 @@ export default function AdminPanel() {
           
           <div className="mt-2 space-y-6">
             {/* Yeni Teklif Yükleme Formu */}
-            <form onSubmit={handleUploadQuote} className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200 border-dashed">
-              <h4 className="text-sm font-bold text-slate-800">Yeni Teklif Ekle</h4>
+            <form 
+              key={editingQuote ? `edit-${editingQuote.id}` : 'new'}
+              onSubmit={handleUploadQuote} 
+              className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200 border-dashed"
+            >
+              <h4 className="text-sm font-bold text-slate-800">
+                {editingQuote ? 'Teklifi Düzenle (Düzenleme Modu)' : 'Yeni Teklif Ekle'}
+              </h4>
 
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700">Müşteri Ad Soyad</label>
@@ -544,7 +764,7 @@ export default function AdminPanel() {
               
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700">Sigorta Şirketi</label>
-                <input name="company_name" required placeholder="Örn: Allianz" className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
+                <input name="company_name" required defaultValue={editingQuote ? editingQuote.company_name : ""} placeholder="Örn: Allianz" className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               
               <div className="space-y-1.5">
@@ -553,44 +773,120 @@ export default function AdminPanel() {
               </div>
               
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700">Teklif Dosyası (PDF)</label>
-                <input type="file" name="file" accept=".pdf" required className="w-full text-xs text-slate-500 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer" />
+                <label className="text-xs font-semibold text-slate-700">Taksit Seçeneği</label>
+                <input name="installments" defaultValue={editingQuote ? editingQuote.installments || "" : ""} placeholder="Örn: Tek Çekim, 3 Taksit, 9 Taksit" className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
 
-              <button type="submit" disabled={isUploadingQuote} className="w-full py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold text-sm rounded-lg shadow-sm transition-colors">
-                {isUploadingQuote ? 'Yükleniyor...' : 'Teklifi Kaydet'}
-              </button>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700">Teklif Notu / Uyarı (Opsiyonel)</label>
+                <textarea name="notes" defaultValue={editingQuote ? editingQuote.notes || "" : ""} placeholder="Örn: Bu fiyata %10 hasarsızlık indirimi dahildir." rows={2} className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
+              </div>
+              
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700">
+                  Teklif Dosyası (PDF - {editingQuote ? 'Yeni dosya yüklemek eskisini ezer' : 'Opsiyonel'})
+                </label>
+                <input type="file" name="file" accept=".pdf" className="w-full text-xs text-slate-500 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer" />
+              </div>
+
+              <div className="flex gap-2">
+                {editingQuote && (
+                  <button 
+                    type="button"
+                    onClick={() => { setEditingQuote(null); setQuotePremium(""); }}
+                    className="w-1/3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-sm rounded-lg shadow-sm transition-colors"
+                  >
+                    Vazgeç
+                  </button>
+                )}
+                <button 
+                  type="submit" 
+                  disabled={isUploadingQuote} 
+                  className={`${editingQuote ? 'w-2/3' : 'w-full'} py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold text-sm rounded-lg shadow-sm transition-colors`}
+                >
+                  {isUploadingQuote ? 'Yükleniyor...' : (editingQuote ? 'Teklifi Güncelle' : 'Teklifi Kaydet')}
+                </button>
+              </div>
             </form>
 
             {/* Mevcut Teklifler */}
             <div>
-              <h4 className="text-sm font-bold text-slate-800 mb-3 border-b border-slate-100 pb-2">Müşteriye İletilen Teklifler</h4>
+              <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+                <h4 className="text-sm font-bold text-slate-800">Müşteriye İletilen Teklifler</h4>
+                {leadQuotes.length > 0 && (
+                  <button
+                    onClick={handleShareQuotesWhatsApp}
+                    className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow-sm transition-all hover:scale-[1.03] cursor-pointer"
+                  >
+                    <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.458 5.704 1.46h.006c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                    </svg>
+                    Teklifleri Paylaş
+                  </button>
+                )}
+              </div>
               {leadQuotes.length === 0 ? (
                 <p className="text-xs text-slate-500 text-center py-4">Henüz bir teklif kaydedilmemiş.</p>
               ) : (
                 <div className="space-y-2">
                   {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {leadQuotes.map((q: any) => (
-                    <div key={q.id} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm hover:border-blue-300 transition-colors">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-sm text-slate-900">{q.company_name}</span>
-                        <span className="text-xs text-slate-500">{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(q.premium)}</span>
-                        <span className="text-[10px] text-slate-400 mt-1">{new Date(q.created_at).toLocaleString('tr-TR')}</span>
+                    <div key={q.id} className="flex flex-col gap-2 p-3 bg-white border border-slate-200 rounded-lg shadow-sm hover:border-blue-300 transition-colors">
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex flex-col items-start">
+                          <span className="font-bold text-sm text-slate-900">{q.company_name}</span>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs font-semibold text-slate-700">{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(q.premium)}</span>
+                            {q.installments && (
+                              <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded text-[10px] font-bold">
+                                {q.installments}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              setEditingQuote(q);
+                              setQuotePremium(formatPremium(q.premium.toString()));
+                            }}
+                            className="px-2 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-bold rounded-md transition-colors"
+                          >
+                            Düzenle
+                          </button>
+                          <button
+                            onClick={() => handleDeleteQuote(q.id)}
+                            className="px-2 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 text-xs font-bold rounded-md transition-colors"
+                          >
+                            Sil
+                          </button>
+                          {q.file_name ? (
+                            <a 
+                              href={`/api/v1/quotes/${q.id}/download`} 
+                              download={q.file_name}
+                              className="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-bold rounded-md transition-colors"
+                            >
+                              İndir (PDF)
+                            </a>
+                          ) : (
+                            <span className="px-3 py-1.5 bg-slate-50 text-slate-400 text-xs font-bold rounded-md select-none">
+                              PDF Yok
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleDeleteQuote(q.id)}
-                          className="px-2 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 text-xs font-bold rounded-md transition-colors"
-                        >
-                          Sil
-                        </button>
-                        <a 
-                          href={`/api/v1/quotes/${q.id}/download`} 
-                          download={q.file_name}
-                          className="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-bold rounded-md transition-colors"
-                        >
-                          İndir (PDF)
-                        </a>
+
+                      {q.notes && (
+                        <div className="w-full p-2 bg-amber-50 border border-amber-100 rounded-lg text-[11px] text-amber-800 flex items-start gap-1.5">
+                          <svg className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          </svg>
+                          <span><span className="font-bold">Not/Uyarı:</span> {q.notes}</span>
+                        </div>
+                      )}
+
+                      <div className="text-[10px] text-slate-400 text-right w-full border-t border-slate-50 pt-1.5">
+                        {new Date(q.created_at).toLocaleString('tr-TR')}
                       </div>
                     </div>
                   ))}
@@ -598,6 +894,459 @@ export default function AdminPanel() {
               )}
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manuel Talep Ekleme Modalı */}
+      <Dialog open={isCreateLeadOpen} onOpenChange={setIsCreateLeadOpen}>
+        <DialogContent className="bg-white sm:max-w-md p-6 rounded-2xl border border-slate-200 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900">Yeni Manuel Talep Ekle</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateLead} className="space-y-4 mt-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-slate-700">Müşteri Adı Soyadı</label>
+              <input name="full_name" placeholder="Örn: Ahmet Yılmaz" className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+            
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-slate-700">Telefon Numarası</label>
+              <input name="phone" required type="tel" placeholder="Örn: 0555 444 33 22" className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-slate-700">Başvuru Kaynağı</label>
+              <select name="lead_source" className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                <option value="Manuel (WhatsApp)">WhatsApp</option>
+                <option value="Manuel (Telefon)">Telefon</option>
+                <option value="Manuel (Diğer)">Diğer / Doğrudan</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-slate-700">Sigorta Kategorisi</label>
+              <select 
+                value={manualCategory} 
+                onChange={(e) => handleCategoryChange(e.target.value)}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                {insuranceCategories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-slate-700">Sigorta Türü</label>
+              <select 
+                value={manualType} 
+                onChange={(e) => setManualType(e.target.value)}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                {insuranceTypes.filter(t => t.category === manualCategory).map(t => (
+                  <option key={t.id} value={t.id}>{t.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Dinamik Alanlar */}
+            {manualCategory === "vehicle" && (
+              <div className="space-y-4 pt-2 border-t border-slate-100">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Plaka</label>
+                  <input name="plate" required placeholder="Örn: 34ABC123" className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 uppercase outline-none" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">TC Kimlik Numarası</label>
+                  <input name="tc_no" required maxLength={11} placeholder="11 Haneli TC No" className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Tescil Belge Seri / Sıra No</label>
+                  <input name="document_no" required maxLength={8} placeholder="Örn: AA123456" className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 uppercase outline-none" />
+                </div>
+              </div>
+            )}
+
+            {manualCategory === "home" && (
+              <div className="space-y-4 pt-2 border-t border-slate-100">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Şehir</label>
+                  <input name="city" required placeholder="Örn: İstanbul" className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                {["DASK", "HOME_CONTENT"].includes(manualType) && (
+                  <>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold text-slate-700">TC Kimlik Numarası</label>
+                      <input name="tc_no" required maxLength={11} placeholder="11 Haneli TC No" className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold block text-slate-700">Daha önce poliçeniz var mı?</label>
+                      <div className="flex gap-6 mt-1 py-1">
+                        <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                          <input 
+                            type="radio" 
+                            name="has_previous_policy" 
+                            value="yes"
+                            checked={manualHasPreviousPolicy === "yes"}
+                            onChange={() => setManualHasPreviousPolicy("yes")}
+                            className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                          />
+                          Evet, var
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                          <input 
+                            type="radio" 
+                            name="has_previous_policy" 
+                            value="no" 
+                            checked={manualHasPreviousPolicy === "no"}
+                            onChange={() => setManualHasPreviousPolicy("no")}
+                            className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                          />
+                          Hayır, ilk kez yaptırıyorum
+                        </label>
+                      </div>
+                    </div>
+                    {manualHasPreviousPolicy === "yes" && (
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-semibold text-slate-700">Mevcut Poliçe Numarası</label>
+                        <input name="previous_policy_number" required placeholder="Poliçe Numaranız" className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {manualCategory === "health" && (
+              <div className="space-y-4 pt-2 border-t border-slate-100">
+                {manualType !== "TRAVEL" && (
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-slate-700">Yaş Aralığı</label>
+                    <input name="ageGroup" required placeholder="Örn: 25-35" className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                )}
+                {manualType === "HEALTH" && (
+                  <>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold text-slate-700">TC Kimlik Numarası</label>
+                      <input name="tc_no" required maxLength={11} placeholder="11 Haneli TC No" className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold block text-slate-700">Sigorta Kimin İçin Yapılacak?</label>
+                      <div className="flex gap-6 mt-1 py-1">
+                        <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                          <input 
+                            type="radio" 
+                            name="health_insured_for" 
+                            value="myself"
+                            checked={manualHealthInsuredFor === "myself"}
+                            onChange={() => setManualHealthInsuredFor("myself")}
+                            className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                          />
+                          Kendim İçin
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                          <input 
+                            type="radio" 
+                            name="health_insured_for" 
+                            value="family" 
+                            checked={manualHealthInsuredFor === "family"}
+                            onChange={() => setManualHealthInsuredFor("family")}
+                            className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                          />
+                          Ailem İçin
+                        </label>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold block text-slate-700">Plan Seçimi</label>
+                      <div className="flex gap-6 mt-1 py-1">
+                        <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                          <input 
+                            type="radio" 
+                            name="health_plan_type" 
+                            value="inpatient_only"
+                            checked={manualHealthPlanType === "inpatient_only"}
+                            onChange={() => setManualHealthPlanType("inpatient_only")}
+                            className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                          />
+                          Sadece Yatarak
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                          <input 
+                            type="radio" 
+                            name="health_plan_type" 
+                            value="inpatient_outpatient" 
+                            checked={manualHealthPlanType === "inpatient_outpatient"}
+                            onChange={() => setManualHealthPlanType("inpatient_outpatient")}
+                            className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                          />
+                          Yatarak + Ayakta
+                        </label>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold block text-slate-700">Poliçe Durumu</label>
+                      <div className="flex gap-6 mt-1 py-1">
+                        <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                          <input 
+                            type="radio" 
+                            name="health_policy_status" 
+                            value="new_policy"
+                            checked={manualHealthPolicyStatus === "new_policy"}
+                            onChange={() => setManualHealthPolicyStatus("new_policy")}
+                            className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                          />
+                          Yeni İş
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                          <input 
+                            type="radio" 
+                            name="health_policy_status" 
+                            value="transfer" 
+                            checked={manualHealthPolicyStatus === "transfer"}
+                            onChange={() => setManualHealthPolicyStatus("transfer")}
+                            className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                          />
+                          Geçiş / Transfer
+                        </label>
+                      </div>
+                    </div>
+                  </>
+                )}
+                {manualType === "TRAVEL" && (
+                  <div className="space-y-4">
+                    {/* Vatandaşlık Durumu */}
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold block text-slate-700">Vatandaşlık Durumu</label>
+                      <div className="flex gap-6 mt-1 py-1">
+                        <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                          <input 
+                            type="radio" 
+                            name="travel_citizenship" 
+                            value="tc" 
+                            checked={manualTravelCitizenship === "tc"}
+                            onChange={() => setManualTravelCitizenship("tc")}
+                            className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                          />
+                          TC Vatandaşı
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                          <input 
+                            type="radio" 
+                            name="travel_citizenship" 
+                            value="passport" 
+                            checked={manualTravelCitizenship === "passport"}
+                            onChange={() => setManualTravelCitizenship("passport")}
+                            className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                          />
+                          Pasaport / Yabancı
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* TC Vatandaşı ise sadece TC No */}
+                    {manualTravelCitizenship === "tc" && (
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-semibold text-slate-700">TC Kimlik Numarası</label>
+                        <input 
+                          name="tc_no" 
+                          required 
+                          maxLength={11} 
+                          placeholder="11 Haneli TC Kimlik Numarası" 
+                          className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                        />
+                      </div>
+                    )}
+
+                    {/* Pasaport ise pasaport detayları */}
+                    {manualTravelCitizenship === "passport" && (
+                      <div className="space-y-4">
+                        <div className="space-y-1.5">
+                          <label className="text-sm font-semibold text-slate-700">Pasaport Numarası</label>
+                          <input 
+                            name="passport_no" 
+                            required 
+                            placeholder="Örn: U12345678" 
+                            value={manualTravelPassportNo}
+                            onChange={(e) => setManualTravelPassportNo(e.target.value)}
+                            className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none uppercase" 
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-sm font-semibold text-slate-700">Uyruk</label>
+                          <select 
+                            name="nationality" 
+                            required 
+                            value={manualTravelNationality}
+                            onChange={(e) => setManualTravelNationality(e.target.value)}
+                            className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                          >
+                            <option value="">Lütfen Seçin</option>
+                            <option value="Almanya">Almanya</option>
+                            <option value="Fransa">Fransa</option>
+                            <option value="İtalya">İtalya</option>
+                            <option value="İspanya">İspanya</option>
+                            <option value="Yunanistan">Yunanistan</option>
+                            <option value="Amerika Birleşik Devletleri">Amerika Birleşik Devletleri</option>
+                            <option value="Rusya">Rusya</option>
+                            <option value="Azerbaycan">Azerbaycan</option>
+                            <option value="İngiltere">İngiltere</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-sm font-semibold text-slate-700">Doğum Tarihi</label>
+                          <input 
+                            name="birth_date" 
+                            type="date" 
+                            required 
+                            value={manualTravelBirthDate}
+                            onChange={(e) => setManualTravelBirthDate(e.target.value)}
+                            className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-sm font-semibold text-slate-700">Doğum Yeri</label>
+                          <input 
+                            name="birth_place" 
+                            required 
+                            placeholder="Örn: Paris" 
+                            value={manualTravelBirthPlace}
+                            onChange={(e) => setManualTravelBirthPlace(e.target.value)}
+                            className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-sm font-semibold block text-slate-700">Cinsiyet</label>
+                          <div className="flex gap-6 mt-1 py-1">
+                            <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                              <input 
+                                type="radio" 
+                                name="travel_gender" 
+                                value="male" 
+                                checked={manualTravelGender === "male"}
+                                onChange={() => setManualTravelGender("male")}
+                                className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                              />
+                              Erkek
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                              <input 
+                                type="radio" 
+                                name="travel_gender" 
+                                value="female" 
+                                checked={manualTravelGender === "female"}
+                                onChange={() => setManualTravelGender("female")}
+                                className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                              />
+                              Kadın
+                            </label>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-sm font-semibold text-slate-700">Detaylı Adres</label>
+                          <textarea 
+                            name="address" 
+                            required 
+                            placeholder="Adres Bilgisi..." 
+                            value={manualTravelAddress}
+                            onChange={(e) => setManualTravelAddress(e.target.value)}
+                            className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none h-20 resize-none" 
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Seyahat Detayları */}
+                    <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                      <label className="text-sm font-semibold text-slate-700">Gidiş Tarihi</label>
+                      <input 
+                        name="departure_date" 
+                        type="date" 
+                        required 
+                        value={manualTravelDepartureDate}
+                        onChange={(e) => setManualTravelDepartureDate(e.target.value)}
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold text-slate-700">Dönüş Tarihi</label>
+                      <input 
+                        name="return_date" 
+                        type="date" 
+                        required 
+                        value={manualTravelReturnDate}
+                        onChange={(e) => setManualTravelReturnDate(e.target.value)}
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold block text-slate-700">Seyahat Sebebi</label>
+                      <select 
+                        name="travel_reason" 
+                        value={manualTravelReason}
+                        onChange={(e) => setManualTravelReason(e.target.value)}
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                      >
+                        <option value="Turistik Gezi">Turistik Gezi</option>
+                        <option value="Eğitim">Eğitim</option>
+                        <option value="İş Seyahati">İş Seyahati</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold block text-slate-700">Seyahat Bölgesi</label>
+                      <select 
+                        name="travel_region" 
+                        value={manualTravelRegion}
+                        onChange={(e) => setManualTravelRegion(e.target.value)}
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                      >
+                        <option value="Avrupa Schengen">Avrupa Schengen</option>
+                        <option value="Tüm Dünya">Tüm Dünya</option>
+                        <option value="Yurt İçi">Yurt İçi</option>
+                        <option value="Tüm Türkiye Incoming">Tüm Türkiye Incoming</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold text-slate-700">Seyahat Edilecek Ülke</label>
+                      <input 
+                        name="travel_country" 
+                        required 
+                        placeholder="Örn: Almanya" 
+                        value={manualTravelCountry}
+                        onChange={(e) => setManualTravelCountry(e.target.value)}
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {manualCategory === "business" && (
+              <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                <label className="text-sm font-semibold text-slate-700">Sektör</label>
+                <input name="sector" required placeholder="Örn: Tekstil" className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+            )}
+
+            <button 
+              type="submit" 
+              disabled={isCreatingLead} 
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold rounded-xl shadow-md transition-colors mt-2"
+            >
+              {isCreatingLead ? "Oluşturuluyor..." : "Talebi Kaydet"}
+            </button>
+          </form>
         </DialogContent>
       </Dialog>
 

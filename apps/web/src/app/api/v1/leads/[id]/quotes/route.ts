@@ -14,6 +14,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         company_name: true,
         premium: true,
         file_name: true,
+        installments: true,
+        notes: true,
         created_at: true,
       },
       orderBy: { created_at: 'desc' }
@@ -33,10 +35,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const formData = await req.formData();
     const company_name = formData.get('company_name') as string;
     const premiumStr = formData.get('premium') as string;
-    const file = formData.get('file') as File;
+    const file = formData.get('file') as File | null;
     const customer_full_name = formData.get('customer_full_name') as string;
+    const installments = formData.get('installments') as string | null;
+    const notes = formData.get('notes') as string | null;
 
-    if (!company_name || !premiumStr || !file) {
+    if (!company_name || !premiumStr) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -55,17 +59,24 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       }
     }
     
-    // Convert File to Buffer/Bytes
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    let file_name = "";
+    let buffer = Buffer.alloc(0);
+
+    if (file && file.name && file.size > 0) {
+      file_name = file.name;
+      const arrayBuffer = await file.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+    }
 
     const newQuote = await prisma.quote.create({
       data: {
         lead_id: id,
         company_name,
         premium,
-        file_name: file.name,
+        file_name,
         file_data: buffer,
+        installments,
+        notes,
       },
     });
 
@@ -76,6 +87,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         company_name: newQuote.company_name,
         premium: newQuote.premium,
         file_name: newQuote.file_name,
+        installments: newQuote.installments,
+        notes: newQuote.notes,
         created_at: newQuote.created_at,
       }
     });

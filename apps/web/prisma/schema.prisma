@@ -25,6 +25,7 @@ enum InsuranceType {
   HEALTH
   BUSINESS
   FIRE
+  TRAVEL
 }
 
 enum PolicyStatus {
@@ -117,6 +118,8 @@ model Quote {
   premium      Float
   file_name    String
   file_data    Bytes
+  installments String?
+  notes        String?
   created_at   DateTime @default(now())
 
   lead Lead @relation(fields: [lead_id], references: [id], onDelete: Cascade)

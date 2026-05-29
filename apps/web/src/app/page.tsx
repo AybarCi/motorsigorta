@@ -51,6 +51,10 @@ const insuranceTypes = [
     desc: "Küçük dostunuzun sağlığını güvence altına alın. Veteriner muayenesi, tedavi ve acil durumlarda yanınızdayız."
   },
   {
+    id: "TRAVEL", category: "health", label: "Seyahat Sağlık Sigortası", image: "/travel_ins.png",
+    desc: "Yurt dışı ve yurt içi seyahatlerinizde ani rahatsızlık, kaza ve bagaj kaybı gibi durumlara karşı tam güvenceyle yola çıkın."
+  },
+  {
     id: "BUSINESS", category: "business", label: "İş Yeri & Fabrika", image: "/factory_ins.png",
     desc: "Emeğinizi ve yatırımınızı koruyun. Kobi'lerden fabrikalara kadar tüm ticari varlıklarınızı risklere karşı esnek çözümlerle koruyun."
   },
@@ -64,15 +68,266 @@ const insuranceTypes = [
   },
 ];
 
+const countriesList = [
+  { code: "AF", name: "Afganistan" },
+  { code: "AX", name: "Aland Adaları" },
+  { code: "DE", name: "Almanya" },
+  { code: "US", name: "Amerika Birleşik Devletleri" },
+  { code: "AS", name: "Amerikan Samoası" },
+  { code: "AD", name: "Andorra" },
+  { code: "AO", name: "Angola" },
+  { code: "AI", name: "Anguilla" },
+  { code: "AQ", name: "Antarktika" },
+  { code: "AG", name: "Antigua ve Barbuda" },
+  { code: "AR", name: "Arjantin" },
+  { code: "AL", name: "Arnavutluk" },
+  { code: "AW", name: "Aruba" },
+  { code: "AU", name: "Avustralya" },
+  { code: "AT", name: "Avusturya" },
+  { code: "AZ", name: "Azerbaycan" },
+  { code: "BS", name: "Bahamalar" },
+  { code: "BH", name: "Bahreyn" },
+  { code: "BD", name: "Bangladeş" },
+  { code: "BB", name: "Barbados" },
+  { code: "EH", name: "Batı Sahra" },
+  { code: "BY", name: "Beyaz Rusya" },
+  { code: "BE", name: "Belçika" },
+  { code: "BZ", name: "Belize" },
+  { code: "BJ", name: "Benin" },
+  { code: "BM", name: "Bermuda" },
+  { code: "BT", name: "Butan" },
+  { code: "BO", name: "Bolivya" },
+  { code: "BQ", name: "Bonaire, Saint Eustatius ve Saba" },
+  { code: "BA", name: "Bosna Hersek" },
+  { code: "BW", name: "Botsvana" },
+  { code: "BV", name: "Bouvet Adası" },
+  { code: "BR", name: "Brezilya" },
+  { code: "BN", name: "Brunei" },
+  { code: "BG", name: "Bulgaristan" },
+  { code: "BF", name: "Burkina Faso" },
+  { code: "BI", name: "Burundi" },
+  { code: "GI", name: "Cebelitarık" },
+  { code: "DZ", name: "Cezayir" },
+  { code: "CX", name: "Noel Adası" },
+  { code: "CC", name: "Cocos (Keeling) Adaları" },
+  { code: "CK", name: "Cook Adaları" },
+  { code: "CW", name: "Curacao" },
+  { code: "TD", name: "Çad" },
+  { code: "CZ", name: "Çek Cumhuriyeti" },
+  { code: "CN", name: "Çin" },
+  { code: "DK", name: "Danimarka" },
+  { code: "CD", name: "Demokratik Kongo Cumhuriyeti" },
+  { code: "DJ", name: "Cibuti" },
+  { code: "DM", name: "Dominika" },
+  { code: "DO", name: "Dominik Cumhuriyeti" },
+  { code: "EC", name: "Ekvador" },
+  { code: "EG", name: "Mısır" },
+  { code: "SV", name: "El Salvador" },
+  { code: "GQ", name: "Ekvator Ginesi" },
+  { code: "ER", name: "Eritre" },
+  { code: "EE", name: "Estonya" },
+  { code: "ET", name: "Etiyopya" },
+  { code: "FK", name: "Falkland Adaları" },
+  { code: "FO", name: "Faroe Adaları" },
+  { code: "FJ", name: "Fiji" },
+  { code: "FI", name: "Finlandiya" },
+  { code: "FR", name: "Fransa" },
+  { code: "GF", name: "Fransız Guyanası" },
+  { code: "PF", name: "Fransız Polinezyası" },
+  { code: "TF", name: "Fransız Güney Toprakları" },
+  { code: "GA", name: "Gabon" },
+  { code: "GM", name: "Gambiya" },
+  { code: "GE", name: "Gürcistan" },
+  { code: "GH", name: "Gana" },
+  { code: "GR", name: "Yunanistan" },
+  { code: "GL", name: "Grönland" },
+  { code: "GD", name: "Grenada" },
+  { code: "GP", name: "Guadeloupe" },
+  { code: "GU", name: "Guam" },
+  { code: "GT", name: "Guatemala" },
+  { code: "GG", name: "Guernsey" },
+  { code: "GN", name: "Gine" },
+  { code: "GW", name: "Gine-Bissau" },
+  { code: "GY", name: "Guyana" },
+  { code: "HT", name: "Haiti" },
+  { code: "HM", name: "Heard Adası ve McDonald Adaları" },
+  { code: "VA", name: "Vatikan" },
+  { code: "HN", name: "Honduras" },
+  { code: "HK", name: "Hong Kong" },
+  { code: "HU", name: "Macaristan" },
+  { code: "IS", name: "İzlanda" },
+  { code: "IN", name: "Hindistan" },
+  { code: "ID", name: "Endonezya" },
+  { code: "IR", name: "İran" },
+  { code: "IQ", name: "Irak" },
+  { code: "IE", name: "İrlanda" },
+  { code: "IM", name: "Isle of Man" },
+  { code: "IL", name: "İsrail" },
+  { code: "IT", name: "İtalya" },
+  { code: "JM", name: "Jamaika" },
+  { code: "JP", name: "Japonya" },
+  { code: "JE", name: "Jersey" },
+  { code: "JO", name: "Ürdün" },
+  { code: "KZ", name: "Kazakistan" },
+  { code: "KE", name: "Kenya" },
+  { code: "KI", name: "Kiribati" },
+  { code: "KP", name: "Kuzey Kore" },
+  { code: "KR", name: "Güney Kore" },
+  { code: "KW", name: "Kuveyt" },
+  { code: "KG", name: "Kırgızistan" },
+  { code: "LA", name: "Laos" },
+  { code: "LV", name: "Letonya" },
+  { code: "LB", name: "Lübnan" },
+  { code: "LS", name: "Lesotho" },
+  { code: "LR", name: "Liberya" },
+  { code: "LY", name: "Libya" },
+  { code: "LI", name: "Lihtenştayn" },
+  { code: "LT", name: "Litvanya" },
+  { code: "LU", name: "Lüksemburg" },
+  { code: "MO", name: "Makao" },
+  { code: "MK", name: "Makedonya" },
+  { code: "MG", name: "Madagaskar" },
+  { code: "MW", name: "Malavi" },
+  { code: "MY", name: "Malezya" },
+  { code: "MV", name: "Maldivler" },
+  { code: "ML", name: "Mali" },
+  { code: "MT", name: "Malta" },
+  { code: "MH", name: "Marshall Adaları" },
+  { code: "MQ", name: "Martinik" },
+  { code: "MR", name: "Moritanya" },
+  { code: "MU", name: "Mauritius" },
+  { code: "YT", name: "Mayotte" },
+  { code: "MX", name: "Meksika" },
+  { code: "FM", name: "Mikronezya" },
+  { code: "MD", name: "Moldova" },
+  { code: "MC", name: "Monako" },
+  { code: "MN", name: "Moğolistan" },
+  { code: "ME", name: "Karadağ" },
+  { code: "MS", name: "Montserrat" },
+  { code: "MA", name: "Fas" },
+  { code: "MZ", name: "Mozambik" },
+  { code: "MM", name: "Myanmar" },
+  { code: "NA", name: "Namibya" },
+  { code: "NR", name: "Nauru" },
+  { code: "NP", name: "Nepal" },
+  { code: "NL", name: "Hollanda" },
+  { code: "NC", name: "Yeni Kaledonya" },
+  { code: "NZ", name: "Yeni Zelanda" },
+  { code: "NI", name: "Nikaragua" },
+  { code: "NE", name: "Nijer" },
+  { code: "NG", name: "Nijerya" },
+  { code: "NU", name: "Niue" },
+  { code: "NF", name: "Norfolk Adası" },
+  { code: "MP", name: "Kuzey Mariana Adaları" },
+  { code: "NO", name: "Norveç" },
+  { code: "OM", name: "Umman" },
+  { code: "PK", name: "Pakistan" },
+  { code: "PW", name: "Palau" },
+  { code: "PS", name: "Filistin" },
+  { code: "PA", name: "Panama" },
+  { code: "PG", name: "Papua Yeni Gine" },
+  { code: "PY", name: "Paraguay" },
+  { code: "PE", name: "Peru" },
+  { code: "PH", name: "Filipinler" },
+  { code: "PN", name: "Pitcairn Adaları" },
+  { code: "PL", name: "Polonya" },
+  { code: "PT", name: "Portekiz" },
+  { code: "PR", name: "Porto Riko" },
+  { code: "QA", name: "Katar" },
+  { code: "RE", name: "Reunion" },
+  { code: "RO", name: "Romanya" },
+  { code: "RU", name: "Rusya" },
+  { code: "RW", name: "Ruanda" },
+  { code: "BL", name: "Saint Barthelemy" },
+  { code: "SH", name: "Saint Helena" },
+  { code: "KN", name: "Saint Kitts ve Nevis" },
+  { code: "LC", name: "Saint Lucia" },
+  { code: "MF", name: "Saint Martin" },
+  { code: "PM", name: "Saint Pierre ve Miquelon" },
+  { code: "VC", name: "Saint Vincent ve Grenadinler" },
+  { code: "WS", name: "Samoa" },
+  { code: "SM", name: "San Marino" },
+  { code: "ST", name: "Sao Tome ve Principe" },
+  { code: "SA", name: "Suudi Arabistan" },
+  { code: "SN", name: "Senegal" },
+  { code: "RS", name: "Sırbistan" },
+  { code: "SC", name: "Seyşel Adaları" },
+  { code: "SL", name: "Sierra Leone" },
+  { code: "SG", name: "Singapur" },
+  { code: "SX", name: "Sint Maarten" },
+  { code: "SK", name: "Slovakya" },
+  { code: "SI", name: "Slovenya" },
+  { code: "SB", name: "Solomon Adaları" },
+  { code: "SO", name: "Somali" },
+  { code: "ZA", name: "Güney Afrika" },
+  { code: "GS", name: "Güney Georgia ve Güney Sandviç Adaları" },
+  { code: "SS", name: "Güney Sudan" },
+  { code: "ES", name: "İspanya" },
+  { code: "LK", name: "Sri Lanka" },
+  { code: "SD", name: "Sudan" },
+  { code: "SR", name: "Surinam" },
+  { code: "SJ", name: "Svalbard ve Jan Mayen" },
+  { code: "SZ", name: "Svaziland" },
+  { code: "SE", name: "İsveç" },
+  { code: "CH", name: "İsviçre" },
+  { code: "SY", name: "Suriye" },
+  { code: "TW", name: "Tayvan" },
+  { code: "TJ", name: "Tacikistan" },
+  { code: "TZ", name: "Tanzanya" },
+  { code: "TH", name: "Tayland" },
+  { code: "TL", name: "Doğu Timor" },
+  { code: "TG", name: "Togo" },
+  { code: "TK", name: "Tokelau" },
+  { code: "TO", name: "Tonga" },
+  { code: "TT", name: "Trinidad ve Tobago" },
+  { code: "TN", name: "Tunus" },
+  { code: "TR", name: "Türkiye" },
+  { code: "TM", name: "Türkmenistan" },
+  { code: "TC", name: "Turks ve Caicos Adaları" },
+  { code: "TV", name: "Tuvalu" },
+  { code: "UG", name: "Uganda" },
+  { code: "UA", name: "Ukrayna" },
+  { code: "AE", name: "Birleşik Arap Emirlikleri" },
+  { code: "GB", name: "Birleşik Krallık" },
+  { code: "UY", name: "Uruguay" },
+  { code: "UZ", name: "Özbekistan" },
+  { code: "VU", name: "Vanuatu" },
+  { code: "VE", name: "Venezuela" },
+  { code: "VN", name: "Vietnam" },
+  { code: "WF", name: "Wallis ve Futuna" },
+  { code: "YE", name: "Yemen" },
+  { code: "ZM", name: "Zambiya" },
+  { code: "ZW", name: "Zimbabve" }
+];
+
 const phoneSchema = z.string().regex(/^05\d{2} \d{3} \d{2} \d{2}$/, "Geçerli bir telefon numarası girin (Örn: 05XX XXX XX XX)");
 
 type FormValues = {
   phone: string;
   tc_no?: string;
+  document_no?: string;
   plate?: string;
   city?: string;
   ageGroup?: string;
   sector?: string;
+  has_previous_policy?: string;
+  previous_policy_number?: string;
+  health_insured_for?: string;
+  health_plan_type?: string;
+  health_policy_status?: string;
+  travel_citizenship?: string;
+  passport_no?: string;
+  nationality?: string;
+  full_name?: string;
+  birth_date?: string;
+  birth_place?: string;
+  gender?: string;
+  address?: string;
+  departure_date?: string;
+  return_date?: string;
+  travel_reason?: string;
+  travel_region?: string;
+  travel_country?: string;
 };
 
 export default function LandingPage() {
@@ -82,6 +337,7 @@ export default function LandingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedModalType, setSelectedModalType] = useState<any | null>(null);
+  const [travelSubStep, setTravelSubStep] = useState<1 | 2>(1);
 
   const formRef = useRef<HTMLElement>(null);
 
@@ -90,10 +346,28 @@ export default function LandingPage() {
       return z.object({
         phone: phoneSchema,
         plate: z.string().min(5, "Geçerli plaka girin (Örn: 34ABC123)"),
-        tc_no: z.string().regex(/^[0-9]{11}$/, "TC Kimlik numarası 11 haneli olmalıdır").optional().or(z.literal('')),
+        tc_no: z.string().regex(/^[0-9]{11}$/, "TC Kimlik numarası 11 haneli olmalıdır"),
+        document_no: z.string().regex(/^[a-zA-Z]{2}[0-9]{6}$/, "Tescil Belge Numarası 2 harf ve 6 rakamdan oluşmalıdır (Örn: AA123456)"),
       });
     }
-    if (["DASK", "HOME_CONTENT"].includes(selectedType || "") || (selectedType === "FIRE" && selectedCategory === "home")) {
+    if (["DASK", "HOME_CONTENT"].includes(selectedType || "")) {
+      return z.object({
+        phone: phoneSchema,
+        city: z.string().min(3, "Şehir adı girin"),
+        tc_no: z.string().regex(/^[0-9]{11}$/, "TC Kimlik numarası 11 haneli olmalıdır"),
+        has_previous_policy: z.string().min(1, "Lütfen seçim yapın"),
+        previous_policy_number: z.string().optional().or(z.literal('')),
+      }).refine((data) => {
+        if (data.has_previous_policy === "yes" && !data.previous_policy_number) {
+          return false;
+        }
+        return true;
+      }, {
+        message: "Mevcut poliçe numarasını girmeniz gerekmektedir",
+        path: ["previous_policy_number"],
+      });
+    }
+    if (selectedType === "FIRE" && selectedCategory === "home") {
       return z.object({
         phone: phoneSchema,
         city: z.string().min(3, "Şehir adı girin"),
@@ -102,7 +376,86 @@ export default function LandingPage() {
     if (selectedType === "HEALTH") {
       return z.object({
         phone: phoneSchema,
+        tc_no: z.string().regex(/^[0-9]{11}$/, "TC Kimlik numarası 11 haneli olmalıdır"),
         ageGroup: z.string().min(1, "Yaş aralığı belirtin (Örn: 25-35)"),
+        health_insured_for: z.string().min(1, "Lütfen seçim yapın"),
+        health_plan_type: z.string().min(1, "Lütfen seçim yapın"),
+        health_policy_status: z.string().min(1, "Lütfen seçim yapın"),
+      });
+    }
+    if (selectedType === "TRAVEL") {
+      return z.object({
+        phone: phoneSchema,
+        travel_citizenship: z.string().min(1, "Lütfen vatandaşlık seçin"),
+        tc_no: z.string().optional().or(z.literal('')),
+        passport_no: z.string().optional().or(z.literal('')),
+        nationality: z.string().optional().or(z.literal('')),
+        full_name: z.string().min(3, "Ad Soyad en az 3 karakter olmalıdır"),
+        birth_date: z.string().optional().or(z.literal('')),
+        birth_place: z.string().optional().or(z.literal('')),
+        gender: z.string().optional().or(z.literal('')),
+        address: z.string().optional().or(z.literal('')),
+        departure_date: z.string().min(1, "Gidiş tarihi seçilmelidir"),
+        return_date: z.string().min(1, "Dönüş tarihi seçilmelidir"),
+        travel_reason: z.string().min(1, "Seyahat sebebi seçilmelidir"),
+        travel_region: z.string().min(1, "Seyahat bölgesi seçilmelidir"),
+        travel_country: z.string().min(1, "Seyahat edilecek ülke seçilmelidir"),
+      }).refine((data) => {
+        if (data.travel_citizenship === "tc") {
+          return !!data.tc_no && /^[0-9]{11}$/.test(data.tc_no);
+        }
+        return true;
+      }, {
+        message: "TC Kimlik numarası 11 haneli olmalıdır",
+        path: ["tc_no"],
+      }).refine((data) => {
+        if (data.travel_citizenship === "passport") {
+          return !!data.passport_no && data.passport_no.trim().length >= 5;
+        }
+        return true;
+      }, {
+        message: "Pasaport numarası en az 5 karakter olmalıdır",
+        path: ["passport_no"],
+      }).refine((data) => {
+        if (data.travel_citizenship === "passport") {
+          return !!data.nationality;
+        }
+        return true;
+      }, {
+        message: "Uyruk seçilmelidir",
+        path: ["nationality"],
+      }).refine((data) => {
+        if (data.travel_citizenship === "passport") {
+          return !!data.birth_date;
+        }
+        return true;
+      }, {
+        message: "Doğum tarihi seçilmelidir",
+        path: ["birth_date"],
+      }).refine((data) => {
+        if (data.travel_citizenship === "passport") {
+          return !!data.birth_place && data.birth_place.trim().length >= 2;
+        }
+        return true;
+      }, {
+        message: "Doğum yeri belirtilmelidir",
+        path: ["birth_place"],
+      }).refine((data) => {
+        if (data.travel_citizenship === "passport") {
+          return !!data.gender;
+        }
+        return true;
+      }, {
+        message: "Cinsiyet seçilmelidir",
+        path: ["gender"],
+      }).refine((data) => {
+        if (data.travel_citizenship === "passport") {
+          return !!data.address && data.address.trim().length >= 10;
+        }
+        return true;
+      }, {
+        message: "Lütfen detaylı adres belirtin (en az 10 karakter)",
+        path: ["address"],
       });
     }
     if (selectedType === "BUSINESS" || (selectedType === "FIRE" && selectedCategory === "business")) {
@@ -119,6 +472,8 @@ export default function LandingPage() {
     handleSubmit,
     reset,
     setValue,
+    watch,
+    trigger,
     formState: { errors },
   } = useForm<FormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -158,6 +513,7 @@ export default function LandingPage() {
   const handleSelectType = (id: string) => {
     setSelectedType(id);
     reset();
+    setTravelSubStep(1);
     setStep(3);
 
     setTimeout(() => {
@@ -183,7 +539,10 @@ export default function LandingPage() {
         tracking_id: trkId,
         insurance_category: selectedCategory,
         insurance_type: selectedType,
-        dynamic_fields: data,
+        dynamic_fields: {
+          ...data,
+          document_no: data.document_no ? data.document_no.toUpperCase() : undefined,
+        },
         phone: data.phone,
         utm_source: new URLSearchParams(window.location.search).get("utm_source") || "direct",
         utm_campaign: new URLSearchParams(window.location.search).get("utm_campaign") || "organic",
@@ -208,8 +567,16 @@ export default function LandingPage() {
 
       const typeLabel = insuranceTypes.find(t => t.id === selectedType && t.category === selectedCategory)?.label || selectedType;
       const dynamicDetail = data.plate || data.city || data.ageGroup || data.sector || "";
-
-      const message = `Merhaba, ${typeLabel} için teklif almak istiyorum. (Kayıt No: ${trkId}${dynamicDetail ? ` - ${dynamicDetail}` : ''})`;
+      
+      let message = `Merhaba, ${typeLabel} için teklif almak istiyorum. (Kayıt No: ${trkId}`;
+      if (selectedType === "TRAVEL") {
+        const citizenLabel = data.travel_citizenship === "tc" ? "TC Vatandaşı" : "Pasaport / Yabancı";
+        const docLabel = data.travel_citizenship === "tc" ? `TC: ${data.tc_no}` : `Pasaport No: ${data.passport_no} (${data.nationality})`;
+        message += ` - Müşteri: ${data.full_name} (${citizenLabel}, ${docLabel}) - Seyahat: ${data.departure_date} / ${data.return_date} - Bölge: ${data.travel_region} - Ülke: ${data.travel_country})`;
+      } else {
+        message += dynamicDetail ? ` - ${dynamicDetail})` : ')';
+      }
+      
       const whatsappUrl = `https://wa.me/905421778953?text=${encodeURIComponent(message)}`;
 
       window.location.href = whatsappUrl;
@@ -439,7 +806,7 @@ export default function LandingPage() {
                           </div>
 
                           <div className="space-y-2 mt-4">
-                            <Label htmlFor="tc_no" className="text-sm font-semibold">TC Kimlik Numarası (Opsiyonel)</Label>
+                            <Label htmlFor="tc_no" className="text-sm font-semibold">TC Kimlik Numarası</Label>
                             <Input
                               id="tc_no"
                               maxLength={11}
@@ -448,14 +815,94 @@ export default function LandingPage() {
                               {...register("tc_no")}
                             />
                             <p className="text-xs text-muted-foreground mt-1">
-                              TC Kimlik numaranızı girmeniz durumunda anında fiyat çalışabiliriz.
+                              Fiyat teklifi çalışabilmemiz için TC Kimlik numaranız gereklidir.
                             </p>
                             {errors.tc_no && <p className="text-destructive text-sm">{errors.tc_no?.message as string}</p>}
+                          </div>
+
+                          <div className="space-y-2 mt-4">
+                            <Label htmlFor="document_no" className="text-sm font-semibold">Tescil Belge Seri / Sıra Numarası</Label>
+                            <Input
+                              id="document_no"
+                              maxLength={8}
+                              placeholder="Örn: AA123456"
+                              className="h-14 text-lg uppercase bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl"
+                              {...register("document_no")}
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Tescil Belge seri/sıra numarası (2 harf + 6 rakam) girilmesi zorunludur.
+                            </p>
+                            {errors.document_no && <p className="text-destructive text-sm">{errors.document_no?.message as string}</p>}
                           </div>
                         </>
                       )}
 
-                      {["DASK", "HOME_CONTENT"].includes(selectedType || "") || (selectedType === "FIRE" && selectedCategory === "home") ? (
+                      {["DASK", "HOME_CONTENT"].includes(selectedType || "") && (
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="city" className="text-sm font-semibold">Şehir</Label>
+                            <Input
+                              id="city"
+                              placeholder="Örn: İstanbul"
+                              className="h-14 text-lg bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl"
+                              {...register("city")}
+                            />
+                            {errors.city && <p className="text-destructive text-sm">{errors.city?.message as string}</p>}
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="tc_no" className="text-sm font-semibold">TC Kimlik Numarası</Label>
+                            <Input
+                              id="tc_no"
+                              maxLength={11}
+                              placeholder="11 Haneli TC Kimlik Numaranız"
+                              className="h-14 text-lg bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl"
+                              {...register("tc_no")}
+                            />
+                            {errors.tc_no && <p className="text-destructive text-sm">{errors.tc_no?.message as string}</p>}
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-sm font-semibold block mb-1">Daha önce poliçeniz var mı?</Label>
+                            <div className="flex gap-6 py-2">
+                              <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                                <input 
+                                  type="radio" 
+                                  value="yes" 
+                                  className="w-4 h-4 text-primary focus:ring-primary"
+                                  {...register("has_previous_policy")} 
+                                />
+                                Evet, var
+                              </label>
+                              <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                                <input 
+                                  type="radio" 
+                                  value="no" 
+                                  className="w-4 h-4 text-primary focus:ring-primary"
+                                  {...register("has_previous_policy")} 
+                                />
+                                Hayır, ilk kez yaptırıyorum
+                              </label>
+                            </div>
+                            {errors.has_previous_policy && <p className="text-destructive text-sm">{errors.has_previous_policy?.message as string}</p>}
+                          </div>
+
+                          {watch("has_previous_policy") === "yes" && (
+                            <div className="space-y-2">
+                              <Label htmlFor="previous_policy_number" className="text-sm font-semibold">Mevcut Poliçe Numarası</Label>
+                              <Input
+                                id="previous_policy_number"
+                                placeholder="Poliçe Numaranız"
+                                className="h-14 text-lg bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl"
+                                {...register("previous_policy_number")}
+                              />
+                              {errors.previous_policy_number && <p className="text-destructive text-sm">{errors.previous_policy_number?.message as string}</p>}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {(selectedType === "FIRE" && selectedCategory === "home") && (
                         <div className="space-y-2">
                           <Label htmlFor="city" className="text-sm font-semibold">Şehir</Label>
                           <Input
@@ -466,18 +913,107 @@ export default function LandingPage() {
                           />
                           {errors.city && <p className="text-destructive text-sm">{errors.city?.message as string}</p>}
                         </div>
-                      ) : null}
+                      )}
 
                       {selectedType === "HEALTH" && (
-                        <div className="space-y-2">
-                          <Label htmlFor="ageGroup" className="text-sm font-semibold">Yaş Aralığı</Label>
-                          <Input
-                            id="ageGroup"
-                            placeholder="Örn: 25-35"
-                            className="h-14 text-lg bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl"
-                            {...register("ageGroup")}
-                          />
-                          {errors.ageGroup && <p className="text-destructive text-sm">{errors.ageGroup?.message as string}</p>}
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="tc_no" className="text-sm font-semibold">TC Kimlik Numarası</Label>
+                            <Input
+                              id="tc_no"
+                              maxLength={11}
+                              placeholder="11 Haneli TC Kimlik Numaranız"
+                              className="h-14 text-lg bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl"
+                              {...register("tc_no")}
+                            />
+                            {errors.tc_no && <p className="text-destructive text-sm">{errors.tc_no?.message as string}</p>}
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="ageGroup" className="text-sm font-semibold">Yaş Aralığı</Label>
+                            <Input
+                              id="ageGroup"
+                              placeholder="Örn: 25-35"
+                              className="h-14 text-lg bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl"
+                              {...register("ageGroup")}
+                            />
+                            {errors.ageGroup && <p className="text-destructive text-sm">{errors.ageGroup?.message as string}</p>}
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-sm font-semibold block mb-1">Sigorta Kimin İçin Yapılacak?</Label>
+                            <div className="flex gap-6 py-2">
+                              <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                                <input 
+                                  type="radio" 
+                                  value="myself" 
+                                  className="w-4 h-4 text-primary focus:ring-primary"
+                                  {...register("health_insured_for")} 
+                                />
+                                Kendim İçin
+                              </label>
+                              <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                                <input 
+                                  type="radio" 
+                                  value="family" 
+                                  className="w-4 h-4 text-primary focus:ring-primary"
+                                  {...register("health_insured_for")} 
+                                />
+                                Ailem İçin
+                              </label>
+                            </div>
+                            {errors.health_insured_for && <p className="text-destructive text-sm">{errors.health_insured_for?.message as string}</p>}
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-sm font-semibold block mb-1">Plan Seçimi</Label>
+                            <div className="flex gap-6 py-2">
+                              <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                                <input 
+                                  type="radio" 
+                                  value="inpatient_only" 
+                                  className="w-4 h-4 text-primary focus:ring-primary"
+                                  {...register("health_plan_type")} 
+                                />
+                                Sadece Yatarak
+                              </label>
+                              <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                                <input 
+                                  type="radio" 
+                                  value="inpatient_outpatient" 
+                                  className="w-4 h-4 text-primary focus:ring-primary"
+                                  {...register("health_plan_type")} 
+                                />
+                                Yatarak + Ayakta
+                              </label>
+                            </div>
+                            {errors.health_plan_type && <p className="text-destructive text-sm">{errors.health_plan_type?.message as string}</p>}
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-sm font-semibold block mb-1">Poliçe Durumu</Label>
+                            <div className="flex gap-6 py-2">
+                              <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                                <input 
+                                  type="radio" 
+                                  value="new_policy" 
+                                  className="w-4 h-4 text-primary focus:ring-primary"
+                                  {...register("health_policy_status")} 
+                                />
+                                Yeni İş
+                              </label>
+                              <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                                <input 
+                                  type="radio" 
+                                  value="transfer" 
+                                  className="w-4 h-4 text-primary focus:ring-primary"
+                                  {...register("health_policy_status")} 
+                                />
+                                Geçiş / Transfer
+                              </label>
+                            </div>
+                            {errors.health_policy_status && <p className="text-destructive text-sm">{errors.health_policy_status?.message as string}</p>}
+                          </div>
                         </div>
                       )}
 
@@ -494,25 +1030,356 @@ export default function LandingPage() {
                         </div>
                       )}
 
-                      <div className="space-y-2">
-                        <Label htmlFor="phone" className="text-sm font-semibold">Telefon Numarası</Label>
-                        <Input
-                          id="phone"
-                          type="tel"
-                          placeholder="05XX XXX XX XX"
-                          className="h-14 text-lg bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl"
-                          {...register("phone", { onChange: handlePhoneChange })}
-                        />
-                        {errors.phone && <p className="text-destructive text-sm">{errors.phone?.message as string}</p>}
-                      </div>
+                      {selectedType === "TRAVEL" && (
+                        <div className="space-y-6">
+                          {/* Wizard Steps indicator */}
+                          <div className="flex justify-between items-center mb-6">
+                            <span className={`text-sm font-semibold ${travelSubStep === 1 ? 'text-primary' : 'text-muted-foreground'}`}>
+                              1. Kişisel Bilgiler
+                            </span>
+                            <div className="h-1 flex-1 mx-4 bg-muted rounded-full overflow-hidden">
+                              <div className={`h-full bg-primary transition-all duration-300 ${travelSubStep === 1 ? 'w-1/2' : 'w-full'}`} />
+                            </div>
+                            <span className={`text-sm font-semibold ${travelSubStep === 2 ? 'text-primary' : 'text-muted-foreground'}`}>
+                              2. Seyahat Detayları
+                            </span>
+                          </div>
 
-                      <Button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="w-full h-16 text-xl font-black rounded-xl shadow-[0_0_20px_rgba(var(--primary),0.3)] hover:shadow-[0_0_40px_rgba(var(--primary),0.6)] transition-all mt-4"
-                      >
-                        {isSubmitting ? "Sisteme İletiliyor..." : "Teklif Al"}
-                      </Button>
+                          {travelSubStep === 1 && (
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="full_name" className="text-sm font-semibold">Adı Soyadı</Label>
+                                <Input
+                                  id="full_name"
+                                  placeholder="Örn: Ahmet Yılmaz"
+                                  className="h-14 text-lg bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl"
+                                  {...register("full_name")}
+                                />
+                                {errors.full_name && <p className="text-destructive text-sm">{errors.full_name?.message as string}</p>}
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label className="text-sm font-semibold block mb-1">Vatandaşlık Durumu</Label>
+                                <div className="flex gap-6 py-2">
+                                  <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                                    <input 
+                                      type="radio" 
+                                      value="tc" 
+                                      className="w-4 h-4 text-primary focus:ring-primary"
+                                      {...register("travel_citizenship")} 
+                                    />
+                                    TC Vatandaşı
+                                  </label>
+                                  <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                                    <input 
+                                      type="radio" 
+                                      value="passport" 
+                                      className="w-4 h-4 text-primary focus:ring-primary"
+                                      {...register("travel_citizenship")} 
+                                    />
+                                    Pasaport / Yabancı
+                                  </label>
+                                </div>
+                                {errors.travel_citizenship && <p className="text-destructive text-sm">{errors.travel_citizenship?.message as string}</p>}
+                              </div>
+
+                              {watch("travel_citizenship") === "tc" && (
+                                <div className="space-y-2">
+                                  <Label htmlFor="tc_no" className="text-sm font-semibold">TC Kimlik Numarası</Label>
+                                  <Input
+                                    id="tc_no"
+                                    maxLength={11}
+                                    placeholder="11 Haneli TC Kimlik Numaranız"
+                                    className="h-14 text-lg bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl"
+                                    {...register("tc_no")}
+                                  />
+                                  {errors.tc_no && <p className="text-destructive text-sm">{errors.tc_no?.message as string}</p>}
+                                </div>
+                              )}
+
+                              {watch("travel_citizenship") === "passport" && (
+                                <div className="space-y-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="passport_no" className="text-sm font-semibold">Pasaport Numarası</Label>
+                                    <Input
+                                      id="passport_no"
+                                      placeholder="Örn: U12345678"
+                                      className="h-14 text-lg bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl uppercase"
+                                      {...register("passport_no")}
+                                    />
+                                    {errors.passport_no && <p className="text-destructive text-sm">{errors.passport_no?.message as string}</p>}
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <Label htmlFor="nationality" className="text-sm font-semibold">Uyruk</Label>
+                                    <select
+                                      id="nationality"
+                                      className="w-full h-14 px-4 bg-background/50 border border-border/50 rounded-xl text-lg outline-none focus:ring-2 focus:ring-primary text-foreground"
+                                      {...register("nationality")}
+                                    >
+                                      <option value="">Lütfen Seçin</option>
+                                      {countriesList.map((c) => (
+                                        <option key={c.code} value={c.name}>{c.name}</option>
+                                      ))}
+                                    </select>
+                                    {errors.nationality && <p className="text-destructive text-sm">{errors.nationality?.message as string}</p>}
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <Label htmlFor="birth_date" className="text-sm font-semibold">Doğum Tarihi</Label>
+                                    <Input
+                                      id="birth_date"
+                                      type="date"
+                                      className="h-14 text-lg bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl"
+                                      {...register("birth_date")}
+                                    />
+                                    {errors.birth_date && <p className="text-destructive text-sm">{errors.birth_date?.message as string}</p>}
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <Label htmlFor="birth_place" className="text-sm font-semibold">Doğum Yeri</Label>
+                                    <Input
+                                      id="birth_place"
+                                      placeholder="Örn: Berlin"
+                                      className="h-14 text-lg bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl"
+                                      {...register("birth_place")}
+                                    />
+                                    {errors.birth_place && <p className="text-destructive text-sm">{errors.birth_place?.message as string}</p>}
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <Label className="text-sm font-semibold block mb-1">Cinsiyet</Label>
+                                    <div className="flex gap-6 py-2">
+                                      <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                                        <input 
+                                          type="radio" 
+                                          value="male" 
+                                          className="w-4 h-4 text-primary focus:ring-primary"
+                                          {...register("gender")} 
+                                        />
+                                        Erkek
+                                      </label>
+                                      <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                                        <input 
+                                          type="radio" 
+                                          value="female" 
+                                          className="w-4 h-4 text-primary focus:ring-primary"
+                                          {...register("gender")} 
+                                        />
+                                        Kadın
+                                      </label>
+                                    </div>
+                                    {errors.gender && <p className="text-destructive text-sm">{errors.gender?.message as string}</p>}
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <Label htmlFor="address" className="text-sm font-semibold">Adres</Label>
+                                    <Input
+                                      id="address"
+                                      placeholder="Örn: 123. Sokak No:4 Daire:2..."
+                                      className="h-14 text-lg bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl"
+                                      {...register("address")}
+                                    />
+                                    {errors.address && <p className="text-destructive text-sm">{errors.address?.message as string}</p>}
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="space-y-2">
+                                <Label htmlFor="phone" className="text-sm font-semibold">Cep Telefonu</Label>
+                                <Input
+                                  id="phone"
+                                  type="tel"
+                                  placeholder="05XX XXX XX XX"
+                                  className="h-14 text-lg bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl"
+                                  {...register("phone", { onChange: handlePhoneChange })}
+                                />
+                                {errors.phone && <p className="text-destructive text-sm">{errors.phone?.message as string}</p>}
+                              </div>
+
+                              <Button
+                                type="button"
+                                onClick={async () => {
+                                  const fieldsToValidate: (keyof FormValues)[] = ["full_name", "travel_citizenship", "phone"];
+                                  const citizenship = watch("travel_citizenship");
+                                  if (citizenship === "tc") {
+                                    fieldsToValidate.push("tc_no");
+                                  } else if (citizenship === "passport") {
+                                    fieldsToValidate.push("passport_no", "nationality", "birth_date", "birth_place", "gender", "address");
+                                  }
+                                  const isValid = await trigger(fieldsToValidate);
+                                  if (isValid) {
+                                    setTravelSubStep(2);
+                                  }
+                                }}
+                                className="w-full h-14 text-lg bg-primary hover:bg-primary/90 rounded-xl mt-4"
+                              >
+                                Seyahat Detayları (Sonraki Adım) <ArrowRight className="ml-2 w-5 h-5" />
+                              </Button>
+                            </div>
+                          )}
+
+                          {travelSubStep === 2 && (
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="departure_date" className="text-sm font-semibold">Gidiş Tarihi</Label>
+                                <Input
+                                  id="departure_date"
+                                  type="date"
+                                  className="h-14 text-lg bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl"
+                                  {...register("departure_date")}
+                                />
+                                {errors.departure_date && <p className="text-destructive text-sm">{errors.departure_date?.message as string}</p>}
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label htmlFor="return_date" className="text-sm font-semibold">Dönüş Tarihi</Label>
+                                <Input
+                                  id="return_date"
+                                  type="date"
+                                  className="h-14 text-lg bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl"
+                                  {...register("return_date")}
+                                />
+                                {errors.return_date && <p className="text-destructive text-sm">{errors.return_date?.message as string}</p>}
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label className="text-sm font-semibold block mb-1">Seyahat Sebebi</Label>
+                                <div className="grid grid-cols-3 gap-3 py-2">
+                                  <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium">
+                                    <input 
+                                      type="radio" 
+                                      value="Turistik Gezi" 
+                                      className="w-4 h-4 text-primary focus:ring-primary"
+                                      {...register("travel_reason")} 
+                                    />
+                                    Turistik
+                                  </label>
+                                  <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium">
+                                    <input 
+                                      type="radio" 
+                                      value="Eğitim" 
+                                      className="w-4 h-4 text-primary focus:ring-primary"
+                                      {...register("travel_reason")} 
+                                    />
+                                    Eğitim
+                                  </label>
+                                  <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium">
+                                    <input 
+                                      type="radio" 
+                                      value="İş Seyahati" 
+                                      className="w-4 h-4 text-primary focus:ring-primary"
+                                      {...register("travel_reason")} 
+                                    />
+                                    İş
+                                  </label>
+                                </div>
+                                {errors.travel_reason && <p className="text-destructive text-sm">{errors.travel_reason?.message as string}</p>}
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label className="text-sm font-semibold block mb-1">Seyahat Bölgesi</Label>
+                                <div className="grid grid-cols-2 gap-3 py-2">
+                                  <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium">
+                                    <input 
+                                      type="radio" 
+                                      value="Avrupa Schengen" 
+                                      className="w-4 h-4 text-primary focus:ring-primary"
+                                      {...register("travel_region")} 
+                                    />
+                                    Avrupa Schengen
+                                  </label>
+                                  <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium">
+                                    <input 
+                                      type="radio" 
+                                      value="Tüm Dünya" 
+                                      className="w-4 h-4 text-primary focus:ring-primary"
+                                      {...register("travel_region")} 
+                                    />
+                                    Tüm Dünya
+                                  </label>
+                                  <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium">
+                                    <input 
+                                      type="radio" 
+                                      value="Yurt İçi" 
+                                      className="w-4 h-4 text-primary focus:ring-primary"
+                                      {...register("travel_region")} 
+                                    />
+                                    Yurt İçi
+                                  </label>
+                                  <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium">
+                                    <input 
+                                      type="radio" 
+                                      value="Tüm Türkiye Incoming" 
+                                      className="w-4 h-4 text-primary focus:ring-primary"
+                                      {...register("travel_region")} 
+                                    />
+                                    Incoming TR
+                                  </label>
+                                </div>
+                                {errors.travel_region && <p className="text-destructive text-sm">{errors.travel_region?.message as string}</p>}
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label htmlFor="travel_country" className="text-sm font-semibold">Seyahat Edilecek Ülke</Label>
+                                <select
+                                  id="travel_country"
+                                  className="w-full h-14 px-4 bg-background/50 border border-border/50 rounded-xl text-lg outline-none focus:ring-2 focus:ring-primary text-foreground"
+                                  {...register("travel_country")}
+                                >
+                                  <option value="">Lütfen Seçin</option>
+                                  {countriesList.map((c) => (
+                                    <option key={c.code} value={c.name}>{c.name}</option>
+                                  ))}
+                                </select>
+                                {errors.travel_country && <p className="text-destructive text-sm">{errors.travel_country?.message as string}</p>}
+                              </div>
+
+                              <div className="flex gap-4 mt-6">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => setTravelSubStep(1)}
+                                  className="flex-1 h-14 text-lg rounded-xl"
+                                >
+                                  <ArrowLeft className="mr-2 w-5 h-5" /> Geri
+                                </Button>
+                                <Button
+                                  type="submit"
+                                  disabled={isSubmitting}
+                                  className="flex-1 h-14 text-lg font-black rounded-xl bg-primary hover:bg-primary/90"
+                                >
+                                  {isSubmitting ? "Gönderiliyor..." : "Teklif Al"}
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {selectedType !== "TRAVEL" && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="phone" className="text-sm font-semibold">Telefon Numarası</Label>
+                            <Input
+                              id="phone"
+                              type="tel"
+                              placeholder="05XX XXX XX XX"
+                              className="h-14 text-lg bg-background/50 border-border/50 focus-visible:ring-primary rounded-xl"
+                              {...register("phone", { onChange: handlePhoneChange })}
+                            />
+                            {errors.phone && <p className="text-destructive text-sm">{errors.phone?.message as string}</p>}
+                          </div>
+
+                          <Button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="w-full h-16 text-xl font-black rounded-xl shadow-[0_0_20px_rgba(var(--primary),0.3)] hover:shadow-[0_0_40px_rgba(var(--primary),0.6)] transition-all mt-4"
+                          >
+                            {isSubmitting ? "Sisteme İletiliyor..." : "Teklif Al"}
+                          </Button>
+                        </>
+                      )}
                       <p className="text-xs text-center text-muted-foreground pt-2">
                         Teklif Al&apos;a tıklayarak yasal metinleri onaylamış olursunuz.
                       </p>

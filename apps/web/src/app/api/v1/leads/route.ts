@@ -14,13 +14,17 @@ export async function POST(req: Request) {
       customer = await prisma.customer.create({
         data: {
           phone: body.phone,
+          full_name: body.full_name || body.dynamic_fields?.full_name || null,
           last_activity_at: new Date(),
         },
       });
     } else {
       customer = await prisma.customer.update({
         where: { id: customer.id },
-        data: { last_activity_at: new Date() },
+        data: { 
+          full_name: body.full_name || body.dynamic_fields?.full_name || customer.full_name,
+          last_activity_at: new Date(),
+        },
       });
     }
 
