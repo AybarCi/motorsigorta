@@ -438,6 +438,19 @@ export default function AdminPanel() {
 
   const totalPages = activeTab === 'leads' ? totalLeadsPages : totalRenewalsPages;
 
+  const statusCounts = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    NEW: leads.filter((l: any) => l.status === 'NEW').length,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    CONTACTED: leads.filter((l: any) => l.status === 'CONTACTED').length,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    QUOTE_SENT: leads.filter((l: any) => l.status === 'QUOTE_SENT').length,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    SOLD: leads.filter((l: any) => l.status === 'SOLD').length,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    LOST: leads.filter((l: any) => l.status === 'LOST').length,
+  };
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans pb-20">
       
@@ -491,6 +504,35 @@ export default function AdminPanel() {
             <div className="absolute -right-4 -top-4 w-24 h-24 bg-orange-100 rounded-full opacity-50 blur-xl"></div>
             <span className="text-sm font-semibold text-slate-500 uppercase tracking-wider relative z-10">Yaklaşan Yenileme</span>
             <span className="text-4xl font-black text-orange-600 mt-2 relative z-10">{upcomingRenewals}</span>
+          </div>
+        </div>
+
+        {/* Lead Status Adetleri Widgets */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center relative overflow-hidden group hover:shadow-md hover:-translate-y-0.5 transition-all">
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-500"></div>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Yeni Başvuru</span>
+            <span className="text-3xl font-black text-orange-600 mt-2">{statusCounts.NEW}</span>
+          </div>
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center relative overflow-hidden group hover:shadow-md hover:-translate-y-0.5 transition-all">
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-500"></div>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">İletişimde (Arandı)</span>
+            <span className="text-3xl font-black text-purple-600 mt-2">{statusCounts.CONTACTED}</span>
+          </div>
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center relative overflow-hidden group hover:shadow-md hover:-translate-y-0.5 transition-all">
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500"></div>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Teklif İletildi</span>
+            <span className="text-3xl font-black text-amber-600 mt-2">{statusCounts.QUOTE_SENT}</span>
+          </div>
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center relative overflow-hidden group hover:shadow-md hover:-translate-y-0.5 transition-all">
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500"></div>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Poliçe Kesildi</span>
+            <span className="text-3xl font-black text-emerald-600 mt-2">{statusCounts.SOLD}</span>
+          </div>
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center relative overflow-hidden group hover:shadow-md hover:-translate-y-0.5 transition-all">
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-rose-500"></div>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Kaybedildi</span>
+            <span className="text-3xl font-black text-rose-600 mt-2">{statusCounts.LOST}</span>
           </div>
         </div>
 
