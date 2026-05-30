@@ -18,7 +18,7 @@ export default function AdminPanel() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [policies, setPolicies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'leads' | 'renewals'>('leads');
+  const [activeTab, setActiveTab] = useState<'leads' | 'renewals' | 'archived'>('leads');
   const [search, setSearch] = useState("");
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -192,7 +192,7 @@ export default function AdminPanel() {
     setCurrentPage(1);
   }, [activeTab, search]);
 
-  const thisMonthLeads = leads.filter(l => new Date(l.created_at).getMonth() === new Date().getMonth()).length;
+  const thisMonthLeads = leads.filter(l => !l.is_archived && new Date(l.created_at).getMonth() === new Date().getMonth()).length;
   const thisMonthSales = policies.filter(p => new Date(p.created_at).getMonth() === new Date().getMonth()).length;
   const conversionRate = thisMonthLeads > 0 ? Math.round((thisMonthSales / thisMonthLeads) * 100) : 0;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -419,11 +419,16 @@ export default function AdminPanel() {
 
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const filteredLeads = leads.filter((l: any) => 
-    l.customer?.phone?.includes(search) || 
-    l.tracking_id.toLowerCase().includes(search.toLowerCase()) ||
-    l.customer?.full_name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredLeads = leads.filter((l: any) => {
+    const matchTab = activeTab === 'archived' ? l.is_archived : !l.is_archived;
+    if (!matchTab) return false;
+
+    return (
+      l.customer?.phone?.includes(search) || 
+      l.tracking_id.toLowerCase().includes(search.toLowerCase()) ||
+      l.customer?.full_name?.toLowerCase().includes(search.toLowerCase())
+    );
+  });
 
   const paginatedLeads = filteredLeads.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalLeadsPages = Math.ceil(filteredLeads.length / itemsPerPage);
@@ -438,19 +443,19 @@ export default function AdminPanel() {
   const paginatedRenewals = renewals.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalRenewalsPages = Math.ceil(renewals.length / itemsPerPage);
 
-  const totalPages = activeTab === 'leads' ? totalLeadsPages : totalRenewalsPages;
+  const totalPages = activeTab === 'renewals' ? totalRenewalsPages : totalLeadsPages;
 
   const statusCounts = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    NEW: leads.filter((l: any) => l.status === 'NEW').length,
+    NEW: leads.filter((l: any) => !l.is_archived && l.status === 'NEW').length,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    CONTACTED: leads.filter((l: any) => l.status === 'CONTACTED').length,
+    CONTACTED: leads.filter((l: any) => !l.is_archived && l.status === 'CONTACTED').length,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    QUOTE_SENT: leads.filter((l: any) => l.status === 'QUOTE_SENT').length,
+    QUOTE_SENT: leads.filter((l: any) => !l.is_archived && l.status === 'QUOTE_SENT').length,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    SOLD: leads.filter((l: any) => l.status === 'SOLD').length,
+    SOLD: leads.filter((l: any) => !l.is_archived && l.status === 'SOLD').length,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    LOST: leads.filter((l: any) => l.status === 'LOST').length,
+    LOST: leads.filter((l: any) => !l.is_archived && l.status === 'LOST').length,
   };
 
   return (
@@ -481,6 +486,12 @@ export default function AdminPanel() {
                   {upcomingRenewals}
                 </span>
               )}
+            </button>
+            <button 
+              onClick={() => setActiveTab('archived')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'archived' ? 'bg-white shadow-sm text-blue-700' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Arşivlenenler
             </button>
           </div>
         </div>
@@ -543,9 +554,9 @@ export default function AdminPanel() {
           
           <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
             <h2 className="text-lg font-bold text-slate-800">
-              {activeTab === 'leads' ? 'Aktif Talepler' : 'Yenileme Radarı'}
+              {activeTab === 'leads' ? 'Aktif Talepler' : activeTab === 'archived' ? 'Arşivlenmiş Talepler' : 'Yenileme Radarı'}
             </h2>
-            {activeTab === 'leads' && (
+            {(activeTab === 'leads' || activeTab === 'archived') && (
               <div className="flex items-center gap-3">
                 <input 
                   type="text"
@@ -554,20 +565,22 @@ export default function AdminPanel() {
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                 />
-                <button
-                  onClick={() => setIsCreateLeadOpen(true)}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-lg shadow-sm transition-colors"
-                >
-                  Yeni Talep Ekle
-                </button>
+                {activeTab === 'leads' && (
+                  <button
+                    onClick={() => setIsCreateLeadOpen(true)}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-lg shadow-sm transition-colors"
+                  >
+                    Yeni Talep Ekle
+                  </button>
+                )}
               </div>
             )}
           </div>
 
           <div className="mt-4">
             {/* LEADS KARTLARI */}
-            {activeTab === 'leads' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {(activeTab === 'leads' || activeTab === 'archived') && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6">
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {paginatedLeads.map((lead: any) => {
                   const allCustomerLeads = leads.filter((other) => 
@@ -689,22 +702,51 @@ export default function AdminPanel() {
                         WhatsApp&apos;tan Yaz
                       </button>
                       
-                      {lead.status === 'NEW' && (
+                      {lead.is_archived ? (
                         <button 
-                          onClick={() => handleUpdateStatus(lead.id, 'CONTACTED')}
-                          className="py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium text-xs rounded-lg transition-colors"
+                          onClick={async () => {
+                            if (confirm("Bu talebi aktif listeye geri yüklemek istiyor musunuz?")) {
+                              try {
+                                const res = await fetch(`/api/v1/leads/${lead.id}`, {
+                                  method: 'PATCH',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ is_archived: false })
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                  setLeads(prev => prev.map(item => item.id === lead.id ? { ...item, is_archived: false } : item));
+                                  alert("Talep başarıyla aktif listeye geri yüklendi!");
+                                }
+                              } catch (err) {
+                                console.error(err);
+                                alert("Bir hata oluştu.");
+                              }
+                            }
+                          }}
+                          className="col-span-2 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-lg border border-indigo-200 transition-colors flex items-center justify-center gap-1 cursor-pointer"
                         >
-                          Arandı Yap
+                          🔄 Arşivden Geri Yükle
                         </button>
-                      )}
+                      ) : (
+                        <>
+                          {lead.status === 'NEW' && (
+                            <button 
+                              onClick={() => handleUpdateStatus(lead.id, 'CONTACTED')}
+                              className="py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium text-xs rounded-lg transition-colors"
+                            >
+                              Arandı Yap
+                            </button>
+                          )}
 
-                      {lead.status !== 'SOLD' && (
-                        <button 
-                          onClick={() => setSelectedLeadId(lead.id)}
-                          className={`${lead.status !== 'NEW' ? 'col-span-2' : ''} py-2 bg-blue-600 text-white hover:bg-blue-700 font-bold text-xs rounded-lg shadow-sm transition-colors`}
-                        >
-                          Satıldı (Poliçe)
-                        </button>
+                          {lead.status !== 'SOLD' && (
+                            <button 
+                              onClick={() => setSelectedLeadId(lead.id)}
+                              className={`${lead.status !== 'NEW' ? 'col-span-2' : ''} py-2 bg-blue-600 text-white hover:bg-blue-700 font-bold text-xs rounded-lg shadow-sm transition-colors`}
+                            >
+                              Satıldı (Poliçe)
+                            </button>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -713,9 +755,9 @@ export default function AdminPanel() {
               </div>
             )}
 
-            {activeTab === 'leads' && filteredLeads.length === 0 && !loading && (
+            {(activeTab === 'leads' || activeTab === 'archived') && filteredLeads.length === 0 && !loading && (
               <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500">
-                Hiç talep bulunmuyor veya arama sonucu boş.
+                {activeTab === 'archived' ? 'Arşivlenmiş herhangi bir talep bulunmuyor.' : 'Hiç talep bulunmuyor veya arama sonucu boş.'}
               </div>
             )}
 
@@ -1572,7 +1614,7 @@ export default function AdminPanel() {
                                       });
                                       const data = await res.json();
                                       if (data.success) {
-                                        setLeads(prev => prev.filter(item => item.id !== l.id));
+                                        setLeads(prev => prev.map(item => item.id === l.id ? { ...item, is_archived: true } : item));
                                         alert("Diğer talep mükerrer olduğu için başarıyla arşive kaldırıldı.");
                                       }
                                     } catch (err) {

@@ -56,7 +56,6 @@ export async function POST(req: Request) {
 export async function GET() {
   try {
     const leads = await prisma.lead.findMany({
-      where: { is_archived: false },
       include: { customer: true },
       orderBy: { created_at: 'desc' },
     });
