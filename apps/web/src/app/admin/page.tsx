@@ -33,6 +33,8 @@ export default function AdminPanel() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [editingQuote, setEditingQuote] = useState<any | null>(null);
   const [policyPremium, setPolicyPremium] = useState("");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [historyModalLead, setHistoryModalLead] = useState<any | null>(null);
 
   // Manuel Talep Ekleme State'leri
   const [isCreateLeadOpen, setIsCreateLeadOpen] = useState(false);
@@ -567,8 +569,25 @@ export default function AdminPanel() {
             {activeTab === 'leads' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {paginatedLeads.map((lead: any) => (
-                  <div key={lead.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-shadow flex flex-col h-full">
+                {paginatedLeads.map((lead: any) => {
+                  const allCustomerLeads = leads.filter((other) => 
+                    other.id !== lead.id && 
+                    other.customer?.phone === lead.customer?.phone
+                  );
+                  
+                  // Same branch active duplicates (e.g. TRAFFIC & TRAFFIC that are not sold/lost)
+                  const duplicateSameBranch = allCustomerLeads.filter((other) => 
+                    other.insurance_type === lead.insurance_type &&
+                    other.status !== 'SOLD' && other.status !== 'LOST'
+                  );
+
+                  // Different branch requests (cross-sell potential)
+                  const otherBranchLeads = allCustomerLeads.filter((other) => 
+                    other.insurance_type !== lead.insurance_type
+                  );
+
+                  return (
+                    <div key={lead.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-all hover:scale-[1.01] flex flex-col h-full relative group">
                     
                     {/* Header: Phone & Status */}
                     <div className="flex justify-between items-start mb-4">
@@ -586,6 +605,30 @@ export default function AdminPanel() {
                         {lead.status}
                       </span>
                     </div>
+
+                    {/* Akıllı Branş/Mükerrer Rozetleri */}
+                    {(duplicateSameBranch.length > 0 || otherBranchLeads.length > 0) && (
+                      <div className="mb-4 space-y-1.5">
+                        {duplicateSameBranch.length > 0 && (
+                          <div 
+                            onClick={() => setHistoryModalLead(lead)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-bold rounded-lg cursor-pointer hover:bg-amber-100 transition-colors shadow-sm animate-pulse"
+                          >
+                            <span>⚠️</span>
+                            <span>Mükerrer Başvuru ({duplicateSameBranch.length} - Aynı Branş)</span>
+                          </div>
+                        )}
+                        {otherBranchLeads.length > 0 && (
+                          <div 
+                            onClick={() => setHistoryModalLead(lead)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-800 text-[10px] font-bold rounded-lg cursor-pointer hover:bg-indigo-100 transition-colors shadow-sm"
+                          >
+                            <span>🔄</span>
+                            <span>Çapraz Fırsat ({otherBranchLeads.length} - Farklı Branş)</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Middle: Details */}
                     <div className="flex-1 space-y-3 mb-5 border-t border-b border-slate-100 py-3">
@@ -665,7 +708,8 @@ export default function AdminPanel() {
                       )}
                     </div>
                   </div>
-                ))}
+                );
+              })}
               </div>
             )}
 
@@ -1405,6 +1449,152 @@ export default function AdminPanel() {
               {isCreatingLead ? "Oluşturuluyor..." : "Talebi Kaydet"}
             </button>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Müşteri Talepleri & Teklif Geçmişi Modalı */}
+      <Dialog open={!!historyModalLead} onOpenChange={(open) => !open && setHistoryModalLead(null)}>
+        <DialogContent className="bg-white sm:max-w-xl p-6 rounded-2xl border border-slate-200 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-black text-slate-800 flex items-center gap-2">
+              <span>📂</span> Müşteri Talep & Teklif Geçmişi
+            </DialogTitle>
+          </DialogHeader>
+
+          {historyModalLead && (() => {
+            const customerPhone = historyModalLead.customer?.phone;
+            const customerName = historyModalLead.customer?.full_name || "İsimsiz Müşteri";
+            
+            // Find all leads of this customer
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const customerLeads = leads.filter((l: any) => l.customer?.phone === customerPhone);
+            
+            return (
+              <div className="space-y-6 mt-4">
+                {/* Müşteri Bilgi Kartı */}
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                  <h4 className="font-bold text-slate-800 text-sm">{customerName}</h4>
+                  <p className="text-xs text-slate-500 font-medium mt-1">📞 {formatWaPhone(customerPhone).replace(/^90/, '0')}</p>
+                  <p className="text-[10px] text-slate-400 mt-2 font-semibold uppercase">TOPLAM BAŞVURU: {customerLeads.length}</p>
+                </div>
+
+                {/* Talepler Listesi */}
+                <div className="space-y-4">
+                  <h5 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Tüm Talepler & Teklifler</h5>
+                  
+                  {customerLeads.length === 0 ? (
+                    <p className="text-xs text-slate-500">Kayıt bulunamadı.</p>
+                  ) : (
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    customerLeads.map((l: any) => {
+                      const isCurrentLead = l.id === historyModalLead.id;
+                      const hasQuotes = l.quotes && l.quotes.length > 0;
+                      
+                      return (
+                        <div 
+                          key={l.id} 
+                          className={`border rounded-xl p-4 transition-all relative ${
+                            isCurrentLead 
+                              ? 'bg-blue-50/30 border-blue-200 shadow-sm ring-1 ring-blue-100' 
+                              : 'bg-white border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          {/* Current Lead Indicator Badge */}
+                          {isCurrentLead && (
+                            <span className="absolute -top-2.5 right-4 px-2 py-0.5 bg-blue-600 text-white text-[9px] font-bold uppercase rounded-md shadow-sm">
+                              Şu Anki İnceleme
+                            </span>
+                          )}
+
+                          {/* Lead Header */}
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <span className="inline-flex px-2 py-0.5 bg-slate-100 border border-slate-200 rounded text-xs font-bold text-slate-700">
+                                {insuranceTypes.find(t => t.id === l.insurance_type)?.label || l.insurance_type}
+                              </span>
+                              <p className="text-[10px] text-slate-400 font-mono mt-1">ID: #{l.tracking_id} • {new Date(l.created_at).toLocaleDateString('tr-TR')}</p>
+                            </div>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                              l.status === 'NEW' ? 'bg-orange-100 text-orange-700' :
+                              l.status === 'CONTACTED' ? 'bg-purple-100 text-purple-700' :
+                              l.status === 'QUOTE_SENT' ? 'bg-yellow-100 text-yellow-700' :
+                              l.status === 'SOLD' ? 'bg-green-100 text-green-700' :
+                              'bg-slate-100 text-slate-700'
+                            }`}>
+                              {l.status}
+                            </span>
+                          </div>
+
+                          {/* Quotes in this Lead */}
+                          {hasQuotes ? (
+                            <div className="mt-3 pt-3 border-t border-slate-100 space-y-2">
+                              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">İletilen Teklif Alternatifleri</p>
+                              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                              {l.quotes.map((q: any) => (
+                                <div key={q.id} className="flex justify-between items-center bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                  <div className="text-xs">
+                                    <span className="font-bold text-slate-800">{q.company_name}</span>
+                                    {q.installments && <span className="text-slate-400 text-[10px] ml-1.5">({q.installments})</span>}
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <span className="font-black text-slate-900 text-xs">
+                                      {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(q.premium)}
+                                    </span>
+                                    {q.file_name && (
+                                      <a 
+                                        href={`/api/v1/quotes/${q.id}/download`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:text-blue-800 text-[10px] font-bold hover:underline"
+                                      >
+                                        İndir 📥
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-[10px] text-slate-400 italic mt-2">Bu talep için teklif çalışması yapılmamış.</p>
+                          )}
+
+                          {/* Quick merge / archive option for duplicates */}
+                          {!isCurrentLead && l.status !== 'SOLD' && l.status !== 'LOST' && (
+                            <div className="mt-3 flex justify-end">
+                              <button
+                                onClick={async () => {
+                                  if (confirm("Bu talebi mükerrer olarak arşivlemek istediğinize emin misiniz?")) {
+                                    try {
+                                      const res = await fetch(`/api/v1/leads/${l.id}`, {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ is_archived: true })
+                                      });
+                                      const data = await res.json();
+                                      if (data.success) {
+                                        setLeads(prev => prev.filter(item => item.id !== l.id));
+                                        alert("Diğer talep mükerrer olduğu için başarıyla arşive kaldırıldı.");
+                                      }
+                                    } catch (err) {
+                                      console.error(err);
+                                      alert("Bir hata oluştu.");
+                                    }
+                                  }
+                                }}
+                                className="text-[10px] px-2 py-1 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded-md border border-red-200 transition-colors cursor-pointer"
+                              >
+                                Diğer Talebi Arşivle (Temizle)
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
