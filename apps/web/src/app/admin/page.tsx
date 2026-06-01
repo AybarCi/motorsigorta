@@ -51,18 +51,26 @@ export default function AdminPanel() {
     isOpen: boolean;
     title: string;
     message: string;
+    variant: 'danger' | 'warning' | 'info';
     onConfirm: () => void | Promise<void>;
   }>({
     isOpen: false,
     title: "",
     message: "",
+    variant: "info",
     onConfirm: () => {},
   });
-  const showConfirm = (title: string, message: string, onConfirm: () => void | Promise<void>) => {
+  const showConfirm = (
+    title: string, 
+    message: string, 
+    onConfirm: () => void | Promise<void>,
+    variant: 'danger' | 'warning' | 'info' = 'info'
+  ) => {
     setConfirmModal({
       isOpen: true,
       title,
       message,
+      variant,
       onConfirm: async () => {
         await onConfirm();
         setConfirmModal(prev => ({ ...prev, isOpen: false }));
@@ -428,7 +436,8 @@ export default function AdminPanel() {
           console.error(err);
           showToast("Bir hata oluştu.", "error");
         }
-      }
+      },
+      "danger"
     );
   };
 
@@ -715,7 +724,8 @@ export default function AdminPanel() {
                                   console.error(err);
                                   showToast("Bir hata oluştu.", "error");
                                 }
-                              }
+                              },
+                              "danger"
                             );
                           }}
                           className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
@@ -1823,25 +1833,57 @@ export default function AdminPanel() {
       {/* Custom Confirmation Modal */}
       {confirmModal.isOpen && (
         <Dialog open={confirmModal.isOpen} onOpenChange={(open) => { if (!open) setConfirmModal(prev => ({ ...prev, isOpen: false })); }}>
-          <DialogContent className="sm:max-w-[440px] p-6 rounded-2xl bg-white border border-slate-100 shadow-xl">
-            <DialogHeader className="mb-4">
-              <DialogTitle className="text-lg font-black text-slate-900 flex items-center gap-2">
-                ⚠️ {confirmModal.title}
-              </DialogTitle>
-              <DialogDescription className="text-sm text-slate-500 font-semibold leading-relaxed mt-1.5">
-                {confirmModal.message}
-              </DialogDescription>
-            </DialogHeader>
+          <DialogContent className="sm:max-w-[440px] p-6 rounded-2xl bg-white border border-slate-100 shadow-2xl animate-scale-up">
+            
+            {/* Top decorative header based on variant */}
+            <div className="flex items-center gap-4 mb-4">
+              <div className={`p-3 rounded-full ${
+                confirmModal.variant === 'danger' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                confirmModal.variant === 'warning' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                'bg-blue-50 text-blue-600 border border-blue-100'
+              }`}>
+                {confirmModal.variant === 'danger' && (
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                  </svg>
+                )}
+                {confirmModal.variant === 'warning' && (
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                  </svg>
+                )}
+                {confirmModal.variant === 'info' && (
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 111.085 1.086L12.5 13.5l.042-.02a.75.75 0 111.085 1.086L13.25 15M9 21h6M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707-.707M6.343 17.657l-.707-.707m12.728 0l-.707.707M6.343 6.343l-.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                  </svg>
+                )}
+              </div>
+              <div>
+                <DialogTitle className="text-base font-black text-slate-900 leading-none">
+                  {confirmModal.title}
+                </DialogTitle>
+                <p className="text-[11px] text-slate-400 font-semibold mt-1 uppercase tracking-wider">Güvenlik Doğrulaması</p>
+              </div>
+            </div>
+
+            <DialogDescription className="text-xs text-slate-500 font-semibold leading-relaxed mt-2 p-3 bg-slate-50 rounded-xl border border-slate-100/80">
+              {confirmModal.message}
+            </DialogDescription>
+
             <DialogFooter className="flex justify-end gap-2.5 mt-6 border-t border-slate-100 pt-4">
               <button
                 onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
-                className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
+                className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer hover:scale-[1.02]"
               >
                 İptal Et
               </button>
               <button
                 onClick={() => confirmModal.onConfirm()}
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
+                className={`px-4 py-2 text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer hover:scale-[1.02] ${
+                  confirmModal.variant === 'danger' ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-100' :
+                  confirmModal.variant === 'warning' ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-100' :
+                  'bg-slate-900 hover:bg-slate-800 shadow-slate-100'
+                }`}
               >
                 Onayla
               </button>
