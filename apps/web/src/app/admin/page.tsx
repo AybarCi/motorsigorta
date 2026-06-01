@@ -614,15 +614,45 @@ export default function AdminPanel() {
                         <h3 className="font-bold text-lg text-slate-900">{lead.customer?.full_name || "İsimsiz Müşteri"}</h3>
                         <p className="text-xs text-slate-500 mt-0.5 font-medium">{formatWaPhone(lead.customer?.phone).replace(/^90/, '0')} • {lead.lead_source || 'Organik Web'}</p>
                       </div>
-                      <span className={`inline-flex px-2 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider ${
-                        lead.status === 'NEW' ? 'bg-orange-100 text-orange-700' :
-                        lead.status === 'CONTACTED' ? 'bg-purple-100 text-purple-700' :
-                        lead.status === 'QUOTE_SENT' ? 'bg-yellow-100 text-yellow-700' :
-                        lead.status === 'SOLD' ? 'bg-green-100 text-green-700' :
-                        'bg-slate-100 text-slate-700'
-                      }`}>
-                        {lead.status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex px-2 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider ${
+                          lead.status === 'NEW' ? 'bg-orange-100 text-orange-700' :
+                          lead.status === 'CONTACTED' ? 'bg-purple-100 text-purple-700' :
+                          lead.status === 'QUOTE_SENT' ? 'bg-yellow-100 text-yellow-700' :
+                          lead.status === 'SOLD' ? 'bg-green-100 text-green-700' :
+                          'bg-slate-100 text-slate-700'
+                        }`}>
+                          {lead.status}
+                        </span>
+                        
+                        <button
+                          onClick={async () => {
+                            if (confirm(`Bu talebi (#${lead.tracking_id}) KALICI olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`)) {
+                              try {
+                                const res = await fetch(`/api/v1/leads/${lead.id}`, {
+                                  method: 'DELETE',
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                  setLeads(prev => prev.filter(item => item.id !== lead.id));
+                                  alert("Talep başarıyla kalıcı olarak silindi.");
+                                } else {
+                                  alert("Talep silinirken bir hata oluştu.");
+                                }
+                              } catch (err) {
+                                console.error(err);
+                                alert("Bir hata oluştu.");
+                              }
+                            }
+                          }}
+                          className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                          title="Talebi Kalıcı Sil"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
 
                     {/* Akıllı Branş/Mükerrer Rozetleri */}
