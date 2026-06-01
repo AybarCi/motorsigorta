@@ -423,10 +423,16 @@ export default function AdminPanel() {
     const matchTab = activeTab === 'archived' ? l.is_archived : !l.is_archived;
     if (!matchTab) return false;
 
+    const searchLower = search.toLowerCase();
+    const plate = l.dynamic_fields?.plate?.toLowerCase() || "";
+    const tcNo = l.dynamic_fields?.tc_no || "";
+
     return (
       l.customer?.phone?.includes(search) || 
-      l.tracking_id.toLowerCase().includes(search.toLowerCase()) ||
-      l.customer?.full_name?.toLowerCase().includes(search.toLowerCase())
+      l.tracking_id.toLowerCase().includes(searchLower) ||
+      l.customer?.full_name?.toLowerCase().includes(searchLower) ||
+      plate.includes(searchLower) ||
+      tcNo.includes(search)
     );
   });
 
@@ -634,7 +640,7 @@ export default function AdminPanel() {
                         {otherBranchLeads.length > 0 && (
                           <div 
                             onClick={() => setHistoryModalLead(lead)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-800 text-[10px] font-bold rounded-lg cursor-pointer hover:bg-indigo-100 transition-colors shadow-sm"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-800 text-[10px] font-bold rounded-lg cursor-pointer hover:bg-indigo-100 transition-colors shadow-sm animate-pulse"
                           >
                             <span>🔄</span>
                             <span>Çapraz Fırsat ({otherBranchLeads.length} - Farklı Branş)</span>
