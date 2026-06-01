@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/lib/supabase";
 
 const formatWaPhone = (phone?: string) => {
@@ -35,6 +35,64 @@ export default function AdminPanel() {
   const [policyPremium, setPolicyPremium] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [historyModalLead, setHistoryModalLead] = useState<any | null>(null);
+
+  // Toast notifications state
+  const [toasts, setToasts] = useState<{ id: string; message: string; type: 'success' | 'error' | 'info' }[]>([]);
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    const id = Math.random().toString();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4000);
+  };
+
+  // Custom Confirmation Modal state
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void | Promise<void>;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+  const showConfirm = (title: string, message: string, onConfirm: () => void | Promise<void>) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: async () => {
+        await onConfirm();
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
+
+  // Custom Prompt Modal state for the WhatsApp Failure Reason
+  const [promptModal, setPromptModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    defaultValue: string;
+    onConfirm: (val: string) => void | Promise<void>;
+  }>({
+    isOpen: false,
+    title: "",
+    defaultValue: "",
+    onConfirm: () => {},
+  });
+  const showPrompt = (title: string, defaultValue: string, onConfirm: (val: string) => void | Promise<void>) => {
+    setPromptModal({
+      isOpen: true,
+      title,
+      defaultValue,
+      onConfirm: async (val) => {
+        await onConfirm(val);
+        setPromptModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
 
   // Manuel Talep Ekleme State'leri
   const [isCreateLeadOpen, setIsCreateLeadOpen] = useState(false);
@@ -163,13 +221,15 @@ export default function AdminPanel() {
       const data = await res.json();
       if (data.success) {
         setIsCreateLeadOpen(false);
-        window.location.reload();
+        showToast("Yeni talep başarıyla manuel olarak oluşturuldu!");
+        // Refresh page or update local state smoothly
+        setTimeout(() => window.location.reload(), 1500);
       } else {
-        alert("Talep oluşturulamadı: " + data.error);
+        showToast("Talep oluşturulamadı: " + data.error, "error");
       }
     } catch (err) {
       console.error(err);
-      alert("Bir hata oluştu.");
+      showToast("Bir hata oluştu.", "error");
     } finally {
       setIsCreatingLead(false);
     }
@@ -243,19 +303,19 @@ export default function AdminPanel() {
 
       if (error) {
         console.error("Upload error", error);
-        alert("Dosya yüklenemedi. Lütfen Supabase üzerinden 'documents' adında bir Storage Bucket oluşturduğunuzdan emin olun.");
+        showToast("Dosya yüklenemedi. Lütfen Supabase Storage Bucket yapılandırmasını kontrol edin.", "error");
         // We can either return or continue without the file
       } else {
         const { data: publicUrlData } = supabase.storage
           .from('documents')
           .getPublicUrl(filePath);
-
+ 
         document_url = publicUrlData.publicUrl;
         mime_type = file.type;
         file_size = file.size;
       }
     }
-
+ 
     await fetch("/api/v1/policies", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -273,10 +333,11 @@ export default function AdminPanel() {
         file_size,
       })
     });
-    
-    window.location.reload();
+     
+    showToast("Poliçe başarıyla kesildi ve sisteme işlendi!");
+    setTimeout(() => window.location.reload(), 1500);
   };
-
+ 
   const openQuoteModal = async (leadId: string) => {
     setQuoteModalLeadId(leadId);
     setLeadQuotes([]);
@@ -292,22 +353,22 @@ export default function AdminPanel() {
       console.error(err);
     }
   };
-
+ 
   const handleUploadQuote = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if(!quoteModalLeadId) return;
     setIsUploadingQuote(true);
-    
+     
     const formData = new FormData(e.currentTarget);
     const actualPremium = formData.get("premium_display") as string;
     formData.set("premium", actualPremium.replace(/\./g, '').replace(',', '.'));
-    
+     
     try {
       const url = editingQuote 
         ? `/api/v1/quotes/${editingQuote.id}` 
         : `/api/v1/leads/${quoteModalLeadId}/quotes`;
       const method = editingQuote ? "PATCH" : "POST";
-
+ 
       const res = await fetch(url, {
         method,
         body: formData,
@@ -317,9 +378,11 @@ export default function AdminPanel() {
         if (editingQuote) {
           setLeadQuotes(leadQuotes.map(q => q.id === editingQuote.id ? data.data : q));
           setEditingQuote(null);
+          showToast("Teklif başarıyla güncellendi!");
         } else {
           setLeadQuotes([data.data, ...leadQuotes]);
-          
+          showToast("Teklif başarıyla kaydedildi!");
+           
           // Automatically update lead status in local state to QUOTE_SENT
           setLeads(prev => prev.map(l => l.id === quoteModalLeadId ? {
             ...l,
@@ -328,7 +391,7 @@ export default function AdminPanel() {
         }
         setQuotePremium("");
         (e.target as HTMLFormElement).reset();
-        
+         
         const customerName = formData.get("customer_full_name") as string;
         if (customerName) {
           setLeads(prev => prev.map(l => l.id === quoteModalLeadId ? {
@@ -337,30 +400,36 @@ export default function AdminPanel() {
           } : l));
         }
       } else {
-        alert("Teklif kaydedilemedi: " + data.error);
+        showToast("Teklif kaydedilemedi: " + data.error, "error");
       }
     } catch(err) {
       console.error(err);
-      alert("Bir hata oluştu.");
+      showToast("Bir hata oluştu.", "error");
     } finally {
       setIsUploadingQuote(false);
     }
   };
 
   const handleDeleteQuote = async (quoteId: string) => {
-    if (!confirm("Bu teklifi silmek istediğinize emin misiniz?")) return;
-    try {
-      const res = await fetch(`/api/v1/quotes/${quoteId}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.success) {
-        setLeadQuotes(leadQuotes.filter(q => q.id !== quoteId));
-      } else {
-        alert("Teklif silinemedi.");
+    showConfirm(
+      "Teklifi Sil",
+      "Bu teklif alternatifini kalıcı olarak silmek istediğinize emin misiniz?",
+      async () => {
+        try {
+          const res = await fetch(`/api/v1/quotes/${quoteId}`, { method: 'DELETE' });
+          const data = await res.json();
+          if (data.success) {
+            setLeadQuotes(prev => prev.filter(q => q.id !== quoteId));
+            showToast("Teklif başarıyla silindi.");
+          } else {
+            showToast("Teklif silinemedi.", "error");
+          }
+        } catch (err) {
+          console.error(err);
+          showToast("Bir hata oluştu.", "error");
+        }
       }
-    } catch (err) {
-      console.error(err);
-      alert("Bir hata oluştu.");
-    }
+    );
   };
 
   const handleShareQuotesWhatsApp = () => {
@@ -626,24 +695,28 @@ export default function AdminPanel() {
                         </span>
                         
                         <button
-                          onClick={async () => {
-                            if (confirm(`Bu talebi (#${lead.tracking_id}) KALICI olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`)) {
-                              try {
-                                const res = await fetch(`/api/v1/leads/${lead.id}`, {
-                                  method: 'DELETE',
-                                });
-                                const data = await res.json();
-                                if (data.success) {
-                                  setLeads(prev => prev.filter(item => item.id !== lead.id));
-                                  alert("Talep başarıyla kalıcı olarak silindi.");
-                                } else {
-                                  alert("Talep silinirken bir hata oluştu.");
+                          onClick={() => {
+                            showConfirm(
+                              "Talebi Kalıcı Sil",
+                              `Bu talebi (#${lead.tracking_id}) ve ilişkili tüm teklifleri KALICI olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`,
+                              async () => {
+                                try {
+                                  const res = await fetch(`/api/v1/leads/${lead.id}`, {
+                                    method: 'DELETE',
+                                  });
+                                  const data = await res.json();
+                                  if (data.success) {
+                                    setLeads(prev => prev.filter(item => item.id !== lead.id));
+                                    showToast("Talep başarıyla kalıcı olarak silindi.");
+                                  } else {
+                                    showToast("Talep silinirken bir hata oluştu.", "error");
+                                  }
+                                } catch (err) {
+                                  console.error(err);
+                                  showToast("Bir hata oluştu.", "error");
                                 }
-                              } catch (err) {
-                                console.error(err);
-                                alert("Bir hata oluştu.");
                               }
-                            }
+                            );
                           }}
                           className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                           title="Talebi Kalıcı Sil"
@@ -740,24 +813,28 @@ export default function AdminPanel() {
                       
                       {lead.is_archived ? (
                         <button 
-                          onClick={async () => {
-                            if (confirm("Bu talebi aktif listeye geri yüklemek istiyor musunuz?")) {
-                              try {
-                                const res = await fetch(`/api/v1/leads/${lead.id}`, {
-                                  method: 'PATCH',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ is_archived: false })
-                                });
-                                const data = await res.json();
-                                if (data.success) {
-                                  setLeads(prev => prev.map(item => item.id === lead.id ? { ...item, is_archived: false } : item));
-                                  alert("Talep başarıyla aktif listeye geri yüklendi!");
+                          onClick={() => {
+                            showConfirm(
+                              "Arşivden Geri Yükle",
+                              "Bu talebi aktif listeye geri yüklemek istiyor musunuz?",
+                              async () => {
+                                try {
+                                  const res = await fetch(`/api/v1/leads/${lead.id}`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ is_archived: false })
+                                  });
+                                  const data = await res.json();
+                                  if (data.success) {
+                                    setLeads(prev => prev.map(item => item.id === lead.id ? { ...item, is_archived: false } : item));
+                                    showToast("Talep başarıyla aktif listeye geri yüklendi!");
+                                  }
+                                } catch (err) {
+                                  console.error(err);
+                                  showToast("Bir hata oluştu.", "error");
                                 }
-                              } catch (err) {
-                                console.error(err);
-                                alert("Bir hata oluştu.");
                               }
-                            }
+                            );
                           }}
                           className="col-span-2 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-lg border border-indigo-200 transition-colors flex items-center justify-center gap-1 cursor-pointer"
                         >
@@ -1006,37 +1083,41 @@ export default function AdminPanel() {
                     </button>
                     
                     <button
-                      onClick={async () => {
-                        const reason = prompt("Lütfen iletilememe sebebini yazın (Örn: Müşterinin WhatsApp'ı yok, Telefondan ulaşılamadı vb.):", "Müşterinin WhatsApp'ı yok.");
-                        if (reason === null) return;
-                        
-                        try {
-                          const currentLead = leads.find(l => l.id === quoteModalLeadId);
-                          const existingNotes = currentLead?.notes ? currentLead.notes + "\n" : "";
-                          const newNotes = existingNotes + `[Sistem Notu] Teklif iletilemedi. Sebep: ${reason}`;
+                      onClick={() => {
+                        showPrompt(
+                          "Teklif İletilemedi",
+                          "Müşterinin WhatsApp'ı yok.",
+                          async (reason) => {
+                            if (!reason.trim()) return;
+                            try {
+                              const currentLead = leads.find(l => l.id === quoteModalLeadId);
+                              const existingNotes = currentLead?.notes ? currentLead.notes + "\n" : "";
+                              const newNotes = existingNotes + `[Sistem Notu] Teklif iletilemedi. Sebep: ${reason}`;
 
-                          const res = await fetch(`/api/v1/leads/${quoteModalLeadId}`, {
-                            method: "PATCH",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ 
-                              status: "LOST",
-                              notes: newNotes
-                            }),
-                          });
-                          const data = await res.json();
-                          if (data.success) {
-                            setLeads(prev => prev.map(l => l.id === quoteModalLeadId ? {
-                              ...l,
-                              status: 'LOST',
-                              notes: newNotes
-                            } : l));
-                            alert("Talep 'KAYBEDİLDİ' (Teklif İletilemedi) olarak işaretlendi ve not kaydedildi.");
-                            setQuoteModalLeadId(null);
+                              const res = await fetch(`/api/v1/leads/${quoteModalLeadId}`, {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ 
+                                  status: "LOST",
+                                  notes: newNotes
+                                }),
+                              });
+                              const data = await res.json();
+                              if (data.success) {
+                                setLeads(prev => prev.map(l => l.id === quoteModalLeadId ? {
+                                  ...l,
+                                  status: 'LOST',
+                                  notes: newNotes
+                                } : l));
+                                showToast("Talep 'KAYBEDİLDİ' (Teklif İletilemedi) olarak işaretlendi.");
+                                setQuoteModalLeadId(null);
+                              }
+                            } catch (err) {
+                              console.error(err);
+                              showToast("Bir hata oluştu.", "error");
+                            }
                           }
-                        } catch (err) {
-                          console.error(err);
-                          alert("Bir hata oluştu.");
-                        }
+                        );
                       }}
                       className="flex items-center gap-1 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-lg transition-all hover:scale-[1.03] cursor-pointer"
                     >
@@ -1680,24 +1761,28 @@ export default function AdminPanel() {
                           {!isCurrentLead && l.status !== 'SOLD' && l.status !== 'LOST' && (
                             <div className="mt-3 flex justify-end">
                               <button
-                                onClick={async () => {
-                                  if (confirm("Bu talebi mükerrer olarak arşivlemek istediğinize emin misiniz?")) {
-                                    try {
-                                      const res = await fetch(`/api/v1/leads/${l.id}`, {
-                                        method: 'PATCH',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ is_archived: true })
-                                      });
-                                      const data = await res.json();
-                                      if (data.success) {
-                                        setLeads(prev => prev.map(item => item.id === l.id ? { ...item, is_archived: true } : item));
-                                        alert("Diğer talep mükerrer olduğu için başarıyla arşive kaldırıldı.");
+                                onClick={() => {
+                                  showConfirm(
+                                    "Talebi Arşivle",
+                                    "Bu talebi mükerrer olarak arşivlemek istediğinize emin misiniz?",
+                                    async () => {
+                                      try {
+                                        const res = await fetch(`/api/v1/leads/${l.id}`, {
+                                          method: 'PATCH',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({ is_archived: true })
+                                        });
+                                        const data = await res.json();
+                                        if (data.success) {
+                                          setLeads(prev => prev.map(item => item.id === l.id ? { ...item, is_archived: true } : item));
+                                          showToast("Diğer talep mükerrer olduğu için başarıyla arşive kaldırıldı.");
+                                        }
+                                      } catch (err) {
+                                        console.error(err);
+                                        showToast("Bir hata oluştu.", "error");
                                       }
-                                    } catch (err) {
-                                      console.error(err);
-                                      alert("Bir hata oluştu.");
                                     }
-                                  }
+                                  );
                                 }}
                                 className="text-[10px] px-2 py-1 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded-md border border-red-200 transition-colors cursor-pointer"
                               >
@@ -1716,6 +1801,110 @@ export default function AdminPanel() {
         </DialogContent>
       </Dialog>
 
+      {/* Toast Stack */}
+      <div className="fixed top-5 right-5 z-[9999] flex flex-col gap-2.5 max-w-sm pointer-events-none">
+        {toasts.map(toast => (
+          <div 
+            key={toast.id}
+            className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border text-sm font-semibold transition-all duration-300 transform translate-y-0 animate-fade-in-up ${
+              toast.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200 shadow-emerald-100' :
+              toast.type === 'error' ? 'bg-rose-50 text-rose-800 border-rose-200 shadow-rose-100' :
+              'bg-slate-50 text-slate-800 border-slate-200 shadow-slate-100'
+            }`}
+          >
+            {toast.type === 'success' && <span className="text-emerald-500 text-base">🟢</span>}
+            {toast.type === 'error' && <span className="text-rose-500 text-base">🔴</span>}
+            {toast.type === 'info' && <span className="text-blue-500 text-base">ℹ️</span>}
+            <span>{toast.message}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Custom Confirmation Modal */}
+      {confirmModal.isOpen && (
+        <Dialog open={confirmModal.isOpen} onOpenChange={(open) => { if (!open) setConfirmModal(prev => ({ ...prev, isOpen: false })); }}>
+          <DialogContent className="sm:max-w-[440px] p-6 rounded-2xl bg-white border border-slate-100 shadow-xl">
+            <DialogHeader className="mb-4">
+              <DialogTitle className="text-lg font-black text-slate-900 flex items-center gap-2">
+                ⚠️ {confirmModal.title}
+              </DialogTitle>
+              <DialogDescription className="text-sm text-slate-500 font-semibold leading-relaxed mt-1.5">
+                {confirmModal.message}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex justify-end gap-2.5 mt-6 border-t border-slate-100 pt-4">
+              <button
+                onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
+              >
+                İptal Et
+              </button>
+              <button
+                onClick={() => confirmModal.onConfirm()}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
+              >
+                Onayla
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Custom Prompt Modal */}
+      {promptModal.isOpen && (
+        <PromptModalInner 
+          title={promptModal.title}
+          defaultValue={promptModal.defaultValue}
+          onCancel={() => setPromptModal(prev => ({ ...prev, isOpen: false }))}
+          onConfirm={promptModal.onConfirm}
+        />
+      )}
+
     </div>
+  );
+}
+
+function PromptModalInner({ title, defaultValue, onCancel, onConfirm }: {
+  title: string;
+  defaultValue: string;
+  onCancel: () => void;
+  onConfirm: (val: string) => void | Promise<void>;
+}) {
+  const [val, setVal] = useState(defaultValue);
+  return (
+    <Dialog open={true} onOpenChange={(open) => { if (!open) onCancel(); }}>
+      <DialogContent className="sm:max-w-[440px] p-6 rounded-2xl bg-white border border-slate-100 shadow-xl">
+        <DialogHeader className="mb-4">
+          <DialogTitle className="text-lg font-black text-slate-900 flex items-center gap-2">
+            🚫 {title}
+          </DialogTitle>
+          <DialogDescription className="text-xs text-slate-400 font-semibold mt-1">
+            İşlemin neden gerçekleştirilemediğini belirtmek için bir açıklama giriniz.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="my-4">
+          <textarea
+            value={val}
+            onChange={(e) => setVal(e.target.value)}
+            className="w-full min-h-[90px] p-3 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 transition-colors placeholder:text-slate-400 text-slate-800"
+            placeholder="Açıklama yazın..."
+          />
+        </div>
+        <DialogFooter className="flex justify-end gap-2.5 mt-2 border-t border-slate-100 pt-4">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
+          >
+            İptal Et
+          </button>
+          <button
+            onClick={() => onConfirm(val)}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
+          >
+            Notu Ekle ve Kaydet
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
