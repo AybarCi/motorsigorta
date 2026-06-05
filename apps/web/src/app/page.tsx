@@ -562,12 +562,14 @@ export default function LandingPage() {
         (window as any).fbq('track', 'Lead', {
           content_category: selectedCategory,
           content_name: selectedType,
+          value: 20000.00,
+          currency: 'TRY',
         });
       }
 
       const typeLabel = insuranceTypes.find(t => t.id === selectedType && t.category === selectedCategory)?.label || selectedType;
       const dynamicDetail = data.plate || data.city || data.ageGroup || data.sector || "";
-      
+
       let message = `Merhaba, ${typeLabel} için teklif almak istiyorum. (Kayıt No: ${trkId}`;
       if (selectedType === "TRAVEL") {
         const citizenLabel = data.travel_citizenship === "tc" ? "TC Vatandaşı" : "Pasaport / Yabancı";
@@ -576,7 +578,7 @@ export default function LandingPage() {
       } else {
         message += dynamicDetail ? ` - ${dynamicDetail})` : ')';
       }
-      
+
       const whatsappUrl = `https://wa.me/905421778953?text=${encodeURIComponent(message)}`;
 
       window.location.href = whatsappUrl;
@@ -602,10 +604,10 @@ export default function LandingPage() {
             <Image src="/logo-dark.png" alt="Sigomax Logo" fill className="object-contain object-left" priority />
           </div>
           <div className="hidden md:flex items-center gap-6">
-            <a 
-              href="https://wa.me/905421778953" 
-              target="_blank" 
-              rel="noreferrer" 
+            <a
+              href="https://wa.me/905421778953"
+              target="_blank"
+              rel="noreferrer"
               className="text-sm font-semibold px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-all backdrop-blur-md"
               onClick={() => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -866,20 +868,20 @@ export default function LandingPage() {
                             <Label className="text-sm font-semibold block mb-1">Daha önce poliçeniz var mı?</Label>
                             <div className="flex gap-6 py-2">
                               <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
-                                <input 
-                                  type="radio" 
-                                  value="yes" 
+                                <input
+                                  type="radio"
+                                  value="yes"
                                   className="w-4 h-4 text-primary focus:ring-primary"
-                                  {...register("has_previous_policy")} 
+                                  {...register("has_previous_policy")}
                                 />
                                 Evet, var
                               </label>
                               <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
-                                <input 
-                                  type="radio" 
-                                  value="no" 
+                                <input
+                                  type="radio"
+                                  value="no"
                                   className="w-4 h-4 text-primary focus:ring-primary"
-                                  {...register("has_previous_policy")} 
+                                  {...register("has_previous_policy")}
                                 />
                                 Hayır, ilk kez yaptırıyorum
                               </label>
@@ -944,20 +946,20 @@ export default function LandingPage() {
                             <Label className="text-sm font-semibold block mb-1">Sigorta Kimin İçin Yapılacak?</Label>
                             <div className="flex gap-6 py-2">
                               <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
-                                <input 
-                                  type="radio" 
-                                  value="myself" 
+                                <input
+                                  type="radio"
+                                  value="myself"
                                   className="w-4 h-4 text-primary focus:ring-primary"
-                                  {...register("health_insured_for")} 
+                                  {...register("health_insured_for")}
                                 />
                                 Kendim İçin
                               </label>
                               <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
-                                <input 
-                                  type="radio" 
-                                  value="family" 
+                                <input
+                                  type="radio"
+                                  value="family"
                                   className="w-4 h-4 text-primary focus:ring-primary"
-                                  {...register("health_insured_for")} 
+                                  {...register("health_insured_for")}
                                 />
                                 Ailem İçin
                               </label>
@@ -969,20 +971,20 @@ export default function LandingPage() {
                             <Label className="text-sm font-semibold block mb-1">Plan Seçimi</Label>
                             <div className="flex gap-6 py-2">
                               <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
-                                <input 
-                                  type="radio" 
-                                  value="inpatient_only" 
+                                <input
+                                  type="radio"
+                                  value="inpatient_only"
                                   className="w-4 h-4 text-primary focus:ring-primary"
-                                  {...register("health_plan_type")} 
+                                  {...register("health_plan_type")}
                                 />
                                 Sadece Yatarak
                               </label>
                               <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
-                                <input 
-                                  type="radio" 
-                                  value="inpatient_outpatient" 
+                                <input
+                                  type="radio"
+                                  value="inpatient_outpatient"
                                   className="w-4 h-4 text-primary focus:ring-primary"
-                                  {...register("health_plan_type")} 
+                                  {...register("health_plan_type")}
                                 />
                                 Yatarak + Ayakta
                               </label>
@@ -994,20 +996,20 @@ export default function LandingPage() {
                             <Label className="text-sm font-semibold block mb-1">Poliçe Durumu</Label>
                             <div className="flex gap-6 py-2">
                               <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
-                                <input 
-                                  type="radio" 
-                                  value="new_policy" 
+                                <input
+                                  type="radio"
+                                  value="new_policy"
                                   className="w-4 h-4 text-primary focus:ring-primary"
-                                  {...register("health_policy_status")} 
+                                  {...register("health_policy_status")}
                                 />
                                 Yeni İş
                               </label>
                               <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
-                                <input 
-                                  type="radio" 
-                                  value="transfer" 
+                                <input
+                                  type="radio"
+                                  value="transfer"
                                   className="w-4 h-4 text-primary focus:ring-primary"
-                                  {...register("health_policy_status")} 
+                                  {...register("health_policy_status")}
                                 />
                                 Geçiş / Transfer
                               </label>
@@ -1062,20 +1064,20 @@ export default function LandingPage() {
                                 <Label className="text-sm font-semibold block mb-1">Vatandaşlık Durumu</Label>
                                 <div className="flex gap-6 py-2">
                                   <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
-                                    <input 
-                                      type="radio" 
-                                      value="tc" 
+                                    <input
+                                      type="radio"
+                                      value="tc"
                                       className="w-4 h-4 text-primary focus:ring-primary"
-                                      {...register("travel_citizenship")} 
+                                      {...register("travel_citizenship")}
                                     />
                                     TC Vatandaşı
                                   </label>
                                   <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
-                                    <input 
-                                      type="radio" 
-                                      value="passport" 
+                                    <input
+                                      type="radio"
+                                      value="passport"
                                       className="w-4 h-4 text-primary focus:ring-primary"
-                                      {...register("travel_citizenship")} 
+                                      {...register("travel_citizenship")}
                                     />
                                     Pasaport / Yabancı
                                   </label>
@@ -1151,20 +1153,20 @@ export default function LandingPage() {
                                     <Label className="text-sm font-semibold block mb-1">Cinsiyet</Label>
                                     <div className="flex gap-6 py-2">
                                       <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
-                                        <input 
-                                          type="radio" 
-                                          value="male" 
+                                        <input
+                                          type="radio"
+                                          value="male"
                                           className="w-4 h-4 text-primary focus:ring-primary"
-                                          {...register("gender")} 
+                                          {...register("gender")}
                                         />
                                         Erkek
                                       </label>
                                       <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
-                                        <input 
-                                          type="radio" 
-                                          value="female" 
+                                        <input
+                                          type="radio"
+                                          value="female"
                                           className="w-4 h-4 text-primary focus:ring-primary"
-                                          {...register("gender")} 
+                                          {...register("gender")}
                                         />
                                         Kadın
                                       </label>
@@ -1247,29 +1249,29 @@ export default function LandingPage() {
                                 <Label className="text-sm font-semibold block mb-1">Seyahat Sebebi</Label>
                                 <div className="grid grid-cols-3 gap-3 py-2">
                                   <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium">
-                                    <input 
-                                      type="radio" 
-                                      value="Turistik Gezi" 
+                                    <input
+                                      type="radio"
+                                      value="Turistik Gezi"
                                       className="w-4 h-4 text-primary focus:ring-primary"
-                                      {...register("travel_reason")} 
+                                      {...register("travel_reason")}
                                     />
                                     Turistik
                                   </label>
                                   <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium">
-                                    <input 
-                                      type="radio" 
-                                      value="Eğitim" 
+                                    <input
+                                      type="radio"
+                                      value="Eğitim"
                                       className="w-4 h-4 text-primary focus:ring-primary"
-                                      {...register("travel_reason")} 
+                                      {...register("travel_reason")}
                                     />
                                     Eğitim
                                   </label>
                                   <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium">
-                                    <input 
-                                      type="radio" 
-                                      value="İş Seyahati" 
+                                    <input
+                                      type="radio"
+                                      value="İş Seyahati"
                                       className="w-4 h-4 text-primary focus:ring-primary"
-                                      {...register("travel_reason")} 
+                                      {...register("travel_reason")}
                                     />
                                     İş
                                   </label>
@@ -1281,38 +1283,38 @@ export default function LandingPage() {
                                 <Label className="text-sm font-semibold block mb-1">Seyahat Bölgesi</Label>
                                 <div className="grid grid-cols-2 gap-3 py-2">
                                   <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium">
-                                    <input 
-                                      type="radio" 
-                                      value="Avrupa Schengen" 
+                                    <input
+                                      type="radio"
+                                      value="Avrupa Schengen"
                                       className="w-4 h-4 text-primary focus:ring-primary"
-                                      {...register("travel_region")} 
+                                      {...register("travel_region")}
                                     />
                                     Avrupa Schengen
                                   </label>
                                   <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium">
-                                    <input 
-                                      type="radio" 
-                                      value="Tüm Dünya" 
+                                    <input
+                                      type="radio"
+                                      value="Tüm Dünya"
                                       className="w-4 h-4 text-primary focus:ring-primary"
-                                      {...register("travel_region")} 
+                                      {...register("travel_region")}
                                     />
                                     Tüm Dünya
                                   </label>
                                   <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium">
-                                    <input 
-                                      type="radio" 
-                                      value="Yurt İçi" 
+                                    <input
+                                      type="radio"
+                                      value="Yurt İçi"
                                       className="w-4 h-4 text-primary focus:ring-primary"
-                                      {...register("travel_region")} 
+                                      {...register("travel_region")}
                                     />
                                     Yurt İçi
                                   </label>
                                   <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium">
-                                    <input 
-                                      type="radio" 
-                                      value="Tüm Türkiye Incoming" 
+                                    <input
+                                      type="radio"
+                                      value="Tüm Türkiye Incoming"
                                       className="w-4 h-4 text-primary focus:ring-primary"
-                                      {...register("travel_region")} 
+                                      {...register("travel_region")}
                                     />
                                     Incoming TR
                                   </label>
@@ -1511,7 +1513,7 @@ export default function LandingPage() {
 
       {/* Sticky Mobile CTA */}
       <div className="md:hidden fixed bottom-0 left-0 w-full z-50 bg-background/90 backdrop-blur-xl border-t border-border/50 p-4 flex gap-3 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
-        <button 
+        <button
           onClick={() => {
             formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             setStep(1);
@@ -1520,7 +1522,7 @@ export default function LandingPage() {
         >
           Teklif Al
         </button>
-        <a 
+        <a
           href="https://wa.me/905421778953?text=Merhaba,%20sigorta%20teklifleri%20hakkında%20bilgi%20almak%20istiyorum"
           target="_blank"
           rel="noopener noreferrer"

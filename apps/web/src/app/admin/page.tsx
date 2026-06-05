@@ -103,6 +103,15 @@ export default function AdminPanel() {
   };
 
   // Manuel Talep Ekleme State'leri
+  const [isEditLeadOpen, setIsEditLeadOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [editingLead, setEditingLead] = useState<any | null>(null);
+  const [isSavingLead, setIsSavingLead] = useState(false);
+  const [editTravelCitizenship, setEditTravelCitizenship] = useState("tc");
+  const [editHasPreviousPolicy, setEditHasPreviousPolicy] = useState("no");
+  const [editHealthInsuredFor, setEditHealthInsuredFor] = useState("myself");
+  const [editHealthPlanType, setEditHealthPlanType] = useState("inpatient_only");
+  const [editHealthPolicyStatus, setEditHealthPolicyStatus] = useState("new_policy");
   const [isCreateLeadOpen, setIsCreateLeadOpen] = useState(false);
   const [manualCategory, setManualCategory] = useState("vehicle");
   const [manualType, setManualType] = useState("TRAFFIC");
@@ -240,6 +249,113 @@ export default function AdminPanel() {
       showToast("Bir hata oluştu.", "error");
     } finally {
       setIsCreatingLead(false);
+    }
+  };
+ 
+  const handleEditLead = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editingLead) return;
+    setIsSavingLead(true);
+
+    const formData = new FormData(e.currentTarget);
+    const full_name = formData.get("full_name") as string;
+    const phone = formData.get("phone") as string;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const dynamic_fields: Record<string, any> = { ...editingLead.dynamic_fields };
+    
+    const category = editingLead.insurance_category;
+    const type = editingLead.insurance_type;
+
+    if (category === "vehicle") {
+      dynamic_fields.plate = (formData.get("plate") as string)?.toUpperCase();
+      dynamic_fields.tc_no = formData.get("tc_no") as string;
+      dynamic_fields.document_no = (formData.get("document_no") as string)?.toUpperCase();
+    } else if (category === "home") {
+      dynamic_fields.city = formData.get("city") as string;
+      if (["DASK", "HOME_CONTENT"].includes(type)) {
+        dynamic_fields.tc_no = formData.get("tc_no") as string;
+        dynamic_fields.has_previous_policy = editHasPreviousPolicy;
+        if (editHasPreviousPolicy === "yes") {
+          dynamic_fields.previous_policy_number = formData.get("previous_policy_number") as string;
+        } else {
+          delete dynamic_fields.previous_policy_number;
+        }
+      }
+    } else if (category === "health") {
+      if (type === "HEALTH") {
+        dynamic_fields.ageGroup = formData.get("ageGroup") as string;
+        dynamic_fields.tc_no = formData.get("tc_no") as string;
+        dynamic_fields.health_insured_for = editHealthInsuredFor;
+        dynamic_fields.health_plan_type = editHealthPlanType;
+        dynamic_fields.health_policy_status = editHealthPolicyStatus;
+      } else if (type === "TRAVEL") {
+        dynamic_fields.travel_citizenship = editTravelCitizenship;
+        if (editTravelCitizenship === "tc") {
+          dynamic_fields.tc_no = formData.get("tc_no") as string;
+          delete dynamic_fields.passport_no;
+          delete dynamic_fields.nationality;
+          delete dynamic_fields.birth_date;
+          delete dynamic_fields.birth_place;
+          delete dynamic_fields.gender;
+          delete dynamic_fields.address;
+        } else {
+          dynamic_fields.passport_no = formData.get("passport_no") as string;
+          dynamic_fields.nationality = formData.get("nationality") as string;
+          dynamic_fields.birth_date = formData.get("birth_date") as string;
+          dynamic_fields.birth_place = formData.get("birth_place") as string;
+          dynamic_fields.gender = formData.get("gender") as string;
+          dynamic_fields.address = formData.get("address") as string;
+          delete dynamic_fields.tc_no;
+        }
+        dynamic_fields.departure_date = formData.get("departure_date") as string;
+        dynamic_fields.return_date = formData.get("return_date") as string;
+        dynamic_fields.travel_reason = formData.get("travel_reason") as string;
+        dynamic_fields.travel_region = formData.get("travel_region") as string;
+        dynamic_fields.travel_country = formData.get("travel_country") as string;
+      } else {
+        dynamic_fields.ageGroup = formData.get("ageGroup") as string;
+      }
+    } else if (category === "business") {
+      dynamic_fields.sector = formData.get("sector") as string;
+    }
+
+    try {
+      const res = await fetch(`/api/v1/leads/${editingLead.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          full_name,
+          phone,
+          dynamic_fields,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setIsEditLeadOpen(false);
+        showToast("Talep bilgileri başarıyla güncellendi!");
+        
+        // Update local state without reload
+        setLeads(prev => prev.map(l => l.id === editingLead.id ? {
+          ...l,
+          customer: {
+            ...l.customer,
+            full_name,
+            phone,
+          },
+          dynamic_fields,
+        } : l));
+        
+        setEditingLead(null);
+      } else {
+        showToast("Güncelleme başarısız: " + data.error, "error");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Bir hata oluştu.", "error");
+    } finally {
+      setIsSavingLead(false);
     }
   };
 
@@ -452,10 +568,12 @@ export default function AdminPanel() {
     const typeLabel = insuranceTypes.find(t => t.id === currentLead.insurance_type)?.label || "Sigorta Teklifi";
 
     let message = `Merhaba *${customerName}*,\n\n`;
-    message += `*${typeLabel}* talebiniz (*#${trackingId}*) için hazırlamış olduğumuz teklif alternatifleri aşağıda yer almaktadır:\n\n`;
+    message += `*Sigomax* üzerinden iletmiş olduğunuz *${typeLabel}* talebiniz (*#${trackingId}*) için hazırladığımız en uygun teklif alternatifleri aşağıda yer almaktadır:\n\n`;
+
+    const sortedQuotes = [...leadQuotes].sort((a, b) => a.premium - b.premium);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    leadQuotes.forEach((q: any, index: number) => {
+    sortedQuotes.forEach((q: any, index: number) => {
       message += `*${index + 1}. Teklif Alternatifi*\n`;
       message += `🏢 *Şirket:* ${q.company_name}\n`;
       message += `💵 *Prim Tutarı:* ${new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(q.premium)}\n`;
@@ -469,7 +587,7 @@ export default function AdminPanel() {
     });
 
     message += `Sizin için en uygun teklifi onaylamak veya detayları görüşmek için bu mesaj üzerinden bizimle iletişime geçebilirsiniz.\n\n`;
-    message += `İyi günler dileriz! 😊`;
+    message += `*Sigomax* ailesi olarak iyi günler dileriz! 😊`;
 
     const encodedText = encodeURIComponent(message);
     const waUrl = `https://wa.me/${formatWaPhone(customerPhone)}?text=${encodedText}`;
@@ -703,6 +821,24 @@ export default function AdminPanel() {
                           {lead.status}
                         </span>
                         
+                        <button
+                          onClick={() => {
+                            setEditingLead(lead);
+                            setEditTravelCitizenship(lead.dynamic_fields?.travel_citizenship || "tc");
+                            setEditHasPreviousPolicy(lead.dynamic_fields?.has_previous_policy || "no");
+                            setEditHealthInsuredFor(lead.dynamic_fields?.health_insured_for || "myself");
+                            setEditHealthPlanType(lead.dynamic_fields?.health_plan_type || "inpatient_only");
+                            setEditHealthPolicyStatus(lead.dynamic_fields?.health_policy_status || "new_policy");
+                            setIsEditLeadOpen(true);
+                          }}
+                          className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                          title="Talebi Düzenle"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                          </svg>
+                        </button>
+
                         <button
                           onClick={() => {
                             showConfirm(
@@ -1141,7 +1277,7 @@ export default function AdminPanel() {
               ) : (
                 <div className="space-y-2">
                   {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                  {leadQuotes.map((q: any) => (
+                  {[...leadQuotes].sort((a, b) => a.premium - b.premium).map((q: any) => (
                     <div key={q.id} className="flex flex-col gap-2 p-3 bg-white border border-slate-200 rounded-lg shadow-sm hover:border-blue-300 transition-colors">
                       <div className="flex items-center justify-between w-full">
                         <div className="flex flex-col items-start">
@@ -1205,6 +1341,463 @@ export default function AdminPanel() {
               )}
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Lead Düzenleme Modalı */}
+      <Dialog open={isEditLeadOpen} onOpenChange={setIsEditLeadOpen}>
+        <DialogContent className="bg-white sm:max-w-md p-6 rounded-2xl border border-slate-200 shadow-2xl max-h-[90vh] overflow-y-auto text-slate-900">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900">Talep Bilgilerini Düzenle</DialogTitle>
+          </DialogHeader>
+          {editingLead && (
+            <form onSubmit={handleEditLead} className="space-y-4 mt-4 text-slate-900">
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700">Müşteri Adı Soyadı</label>
+                <input 
+                  name="full_name" 
+                  defaultValue={editingLead.customer?.full_name || ""} 
+                  placeholder="Örn: Ahmet Yılmaz" 
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                />
+              </div>
+              
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700">Telefon Numarası</label>
+                <input 
+                  name="phone" 
+                  required 
+                  type="tel" 
+                  defaultValue={editingLead.customer?.phone || ""} 
+                  placeholder="Örn: 0555 444 33 22" 
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                />
+              </div>
+
+              {/* Dinamik Alanlar */}
+              {editingLead.insurance_category === "vehicle" && (
+                <div className="space-y-4 pt-2 border-t border-slate-100">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-slate-700">Plaka</label>
+                    <input 
+                      name="plate" 
+                      required 
+                      defaultValue={editingLead.dynamic_fields?.plate || ""} 
+                      placeholder="Örn: 34ABC123" 
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 uppercase outline-none" 
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-slate-700">TC Kimlik Numarası</label>
+                    <input 
+                      name="tc_no" 
+                      required 
+                      maxLength={11} 
+                      defaultValue={editingLead.dynamic_fields?.tc_no || ""} 
+                      placeholder="11 Haneli TC No" 
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-slate-700">Tescil Belge Seri / Sıra No</label>
+                    <input 
+                      name="document_no" 
+                      required 
+                      maxLength={8} 
+                      defaultValue={editingLead.dynamic_fields?.document_no || ""} 
+                      placeholder="Örn: AA123456" 
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 uppercase outline-none" 
+                    />
+                  </div>
+                </div>
+              )}
+
+              {editingLead.insurance_category === "home" && (
+                <div className="space-y-4 pt-2 border-t border-slate-100">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-slate-700">Şehir</label>
+                    <input 
+                      name="city" 
+                      required 
+                      defaultValue={editingLead.dynamic_fields?.city || ""} 
+                      placeholder="Örn: İstanbul" 
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                    />
+                  </div>
+                  {["DASK", "HOME_CONTENT"].includes(editingLead.insurance_type) && (
+                    <>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-semibold text-slate-700">TC Kimlik Numarası</label>
+                        <input 
+                          name="tc_no" 
+                          required 
+                          maxLength={11} 
+                          defaultValue={editingLead.dynamic_fields?.tc_no || ""} 
+                          placeholder="11 Haneli TC No" 
+                          className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-semibold block text-slate-700">Daha önce poliçeniz var mı?</label>
+                        <div className="flex gap-6 mt-1 py-1">
+                          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                            <input 
+                              type="radio" 
+                              name="has_previous_policy" 
+                              value="yes"
+                              checked={editHasPreviousPolicy === "yes"}
+                              onChange={() => setEditHasPreviousPolicy("yes")}
+                              className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                            />
+                            Evet, var
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                            <input 
+                              type="radio" 
+                              name="has_previous_policy" 
+                              value="no" 
+                              checked={editHasPreviousPolicy === "no"}
+                              onChange={() => setEditHasPreviousPolicy("no")}
+                              className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                            />
+                            Hayır, ilk kez yaptırıyorum
+                          </label>
+                        </div>
+                      </div>
+                      {editHasPreviousPolicy === "yes" && (
+                        <div className="space-y-1.5">
+                          <label className="text-sm font-semibold text-slate-700">Mevcut Poliçe Numarası</label>
+                          <input 
+                            name="previous_policy_number" 
+                            required 
+                            defaultValue={editingLead.dynamic_fields?.previous_policy_number || ""} 
+                            placeholder="Poliçe Numaranız" 
+                            className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {editingLead.insurance_category === "health" && (
+                <div className="space-y-4 pt-2 border-t border-slate-100">
+                  {editingLead.insurance_type !== "TRAVEL" && (
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold text-slate-700">Yaş Aralığı</label>
+                      <input 
+                        name="ageGroup" 
+                        required 
+                        defaultValue={editingLead.dynamic_fields?.ageGroup || ""} 
+                        placeholder="Örn: 25-35" 
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                      />
+                    </div>
+                  )}
+                  {editingLead.insurance_type === "HEALTH" && (
+                    <>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-semibold text-slate-700">TC Kimlik Numarası</label>
+                        <input 
+                          name="tc_no" 
+                          required 
+                          maxLength={11} 
+                          defaultValue={editingLead.dynamic_fields?.tc_no || ""} 
+                          placeholder="11 Haneli TC No" 
+                          className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-semibold block text-slate-700">Sigorta Kimin İçin Yapılacak?</label>
+                        <div className="flex gap-6 mt-1 py-1">
+                          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                            <input 
+                              type="radio" 
+                              name="health_insured_for" 
+                              value="myself"
+                              checked={editHealthInsuredFor === "myself"}
+                              onChange={() => setEditHealthInsuredFor("myself")}
+                              className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                            />
+                            Kendim İçin
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                            <input 
+                              type="radio" 
+                              name="health_insured_for" 
+                              value="family" 
+                              checked={editHealthInsuredFor === "family"}
+                              onChange={() => setEditHealthInsuredFor("family")}
+                              className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                            />
+                            Ailem İçin
+                          </label>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-semibold block text-slate-700">Plan Seçimi</label>
+                        <div className="flex gap-6 mt-1 py-1">
+                          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                            <input 
+                              type="radio" 
+                              name="health_plan_type" 
+                              value="inpatient_only"
+                              checked={editHealthPlanType === "inpatient_only"}
+                              onChange={() => setEditHealthPlanType("inpatient_only")}
+                              className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                            />
+                            Sadece Yatarak
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                            <input 
+                              type="radio" 
+                              name="health_plan_type" 
+                              value="inpatient_outpatient" 
+                              checked={editHealthPlanType === "inpatient_outpatient"}
+                              onChange={() => setEditHealthPlanType("inpatient_outpatient")}
+                              className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                            />
+                            Yatarak + Ayakta
+                          </label>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-semibold block text-slate-700">Poliçe Durumu</label>
+                        <div className="flex gap-6 mt-1 py-1">
+                          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                            <input 
+                              type="radio" 
+                              name="health_policy_status" 
+                              value="new_policy"
+                              checked={editHealthPolicyStatus === "new_policy"}
+                              onChange={() => setEditHealthPolicyStatus("new_policy")}
+                              className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                            />
+                            Yeni İş
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                            <input 
+                              type="radio" 
+                              name="health_policy_status" 
+                              value="transfer" 
+                              checked={editHealthPolicyStatus === "transfer"}
+                              onChange={() => setEditHealthPolicyStatus("transfer")}
+                              className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                            />
+                            Geçiş / Transfer
+                          </label>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {editingLead.insurance_type === "TRAVEL" && (
+                    <div className="space-y-4">
+                      {/* Vatandaşlık Durumu */}
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-semibold block text-slate-700">Vatandaşlık Durumu</label>
+                        <div className="flex gap-6 mt-1 py-1">
+                          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                            <input 
+                              type="radio" 
+                              name="travel_citizenship" 
+                              value="tc" 
+                              checked={editTravelCitizenship === "tc"}
+                              onChange={() => setEditTravelCitizenship("tc")}
+                              className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                            />
+                            TC Vatandaşı
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800">
+                            <input 
+                              type="radio" 
+                              name="travel_citizenship" 
+                              value="passport" 
+                              checked={editTravelCitizenship === "passport"}
+                              onChange={() => setEditTravelCitizenship("passport")}
+                              className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                            />
+                            Pasaport / Yabancı
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* TC Vatandaşı ise sadece TC No */}
+                      {editTravelCitizenship === "tc" && (
+                        <div className="space-y-1.5">
+                          <label className="text-sm font-semibold text-slate-700">TC Kimlik Numarası</label>
+                          <input 
+                            name="tc_no" 
+                            required 
+                            maxLength={11} 
+                            defaultValue={editingLead.dynamic_fields?.tc_no || ""} 
+                            placeholder="11 Haneli TC Kimlik Numarası" 
+                            className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                          />
+                        </div>
+                      )}
+
+                      {/* Pasaport ise pasaport detayları */}
+                      {editTravelCitizenship === "passport" && (
+                        <div className="space-y-4">
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-semibold text-slate-700">Pasaport Numarası</label>
+                            <input 
+                              name="passport_no" 
+                              required 
+                              defaultValue={editingLead.dynamic_fields?.passport_no || ""} 
+                              placeholder="Pasaport No" 
+                              className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-semibold text-slate-700">Uyruk</label>
+                            <input 
+                              name="nationality" 
+                              required 
+                              defaultValue={editingLead.dynamic_fields?.nationality || ""} 
+                              placeholder="Örn: İngiltere" 
+                              className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-semibold text-slate-700">Doğum Tarihi</label>
+                            <input 
+                              name="birth_date" 
+                              required 
+                              type="date" 
+                              defaultValue={editingLead.dynamic_fields?.birth_date || ""} 
+                              className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-semibold text-slate-700">Doğum Yeri</label>
+                            <input 
+                              name="birth_place" 
+                              required 
+                              defaultValue={editingLead.dynamic_fields?.birth_place || ""} 
+                              placeholder="Doğum Yeri" 
+                              className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-semibold text-slate-700">Cinsiyet</label>
+                            <select 
+                              name="gender" 
+                              defaultValue={editingLead.dynamic_fields?.gender || "male"} 
+                              className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                            >
+                              <option value="male">Erkek</option>
+                              <option value="female">Kadın</option>
+                            </select>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-semibold text-slate-700">Adres</label>
+                            <textarea 
+                              name="address" 
+                              required 
+                              rows={2} 
+                              defaultValue={editingLead.dynamic_fields?.address || ""} 
+                              placeholder="Detaylı adres giriniz..." 
+                              className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none resize-none" 
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-semibold text-slate-700">Gidiş Tarihi</label>
+                        <input 
+                          name="departure_date" 
+                          required 
+                          type="date" 
+                          defaultValue={editingLead.dynamic_fields?.departure_date || ""} 
+                          className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-semibold text-slate-700">Dönüş Tarihi</label>
+                        <input 
+                          name="return_date" 
+                          required 
+                          type="date" 
+                          defaultValue={editingLead.dynamic_fields?.return_date || ""} 
+                          className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-semibold text-slate-700">Seyahat Sebebi</label>
+                        <select 
+                          name="travel_reason" 
+                          defaultValue={editingLead.dynamic_fields?.travel_reason || "Turistik Gezi"} 
+                          className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                          <option value="Turistik Gezi">Turistik</option>
+                          <option value="Eğitim">Eğitim</option>
+                          <option value="İş Seyahati">İş</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-semibold text-slate-700">Seyahat Bölgesi</label>
+                        <select 
+                          name="travel_region" 
+                          defaultValue={editingLead.dynamic_fields?.travel_region || "Avrupa Schengen"} 
+                          className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                          <option value="Avrupa Schengen">Avrupa Schengen</option>
+                          <option value="Tüm Dünya">Tüm Dünya</option>
+                          <option value="Yurt İçi">Yurt İçi</option>
+                          <option value="Tüm Türkiye Incoming">Incoming TR</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-semibold text-slate-700">Seyahat Edilecek Ülke</label>
+                        <input 
+                          name="travel_country" 
+                          required 
+                          defaultValue={editingLead.dynamic_fields?.travel_country || ""} 
+                          placeholder="Örn: Almanya" 
+                          className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {editingLead.insurance_category === "business" && (
+                <div className="space-y-4 pt-2 border-t border-slate-100">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-slate-700">Sektör</label>
+                    <input 
+                      name="sector" 
+                      required 
+                      defaultValue={editingLead.dynamic_fields?.sector || ""} 
+                      placeholder="Örn: Tekstil" 
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4 border-t border-slate-100">
+                <button 
+                  type="button" 
+                  onClick={() => setIsEditLeadOpen(false)} 
+                  className="w-1/3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-lg transition-colors cursor-pointer"
+                >
+                  Vazgeç
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSavingLead} 
+                  className="w-2/3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold text-sm rounded-lg shadow-sm transition-colors cursor-pointer"
+                >
+                  {isSavingLead ? 'Kaydediliyor...' : 'Bilgileri Güncelle'}
+                </button>
+              </div>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
 

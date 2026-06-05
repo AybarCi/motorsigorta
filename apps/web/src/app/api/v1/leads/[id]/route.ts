@@ -6,6 +6,46 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const { id } = await params;
     const body = await req.json();
     
+    // Fetch existing lead with customer info
+    const existingLead = await prisma.lead.findUnique({
+      where: { id },
+      include: { customer: true },
+    });
+
+    if (!existingLead) {
+      return NextResponse.json({ success: false, error: 'Talep bulunamadı' }, { status: 404 });
+    }
+
+    // Phone duplicate validation
+    if (body.phone && body.phone !== existingLead.customer.phone) {
+      const conflictingCustomer = await prisma.customer.findUnique({
+        where: { phone: body.phone },
+      });
+      if (conflictingCustomer) {
+        return NextResponse.json(
+          { success: false, error: 'Bu telefon numarası zaten sisteme kayıtlı başka bir müşteriye ait!' },
+          { status: 400 }
+        );
+      }
+
+      // Update customer phone and name
+      await prisma.customer.update({
+        where: { id: existingLead.customer_id },
+        data: {
+          phone: body.phone,
+          full_name: body.full_name !== undefined ? body.full_name : undefined,
+        },
+      });
+    } else if (body.full_name && body.full_name !== existingLead.customer.full_name) {
+      // Update customer name only
+      await prisma.customer.update({
+        where: { id: existingLead.customer_id },
+        data: {
+          full_name: body.full_name,
+        },
+      });
+    }
+
     // Update Lead
     const updatedLead = await prisma.lead.update({
       where: { id },
@@ -16,12 +56,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         next_follow_up_at: body.next_follow_up_at ? new Date(body.next_follow_up_at) : undefined,
         assigned_to: body.assigned_to,
         is_archived: body.is_archived,
+        dynamic_fields: body.dynamic_fields !== undefined ? body.dynamic_fields : undefined,
         updated_at: new Date(),
       },
+      include: { customer: true },
     });
 
     // Update Customer last activity
-    if (body.last_contacted_at || body.status) {
+    if (body.last_contacted_at || body.status || body.phone || body.full_name) {
       await prisma.customer.update({
         where: { id: updatedLead.customer_id },
         data: { last_activity_at: new Date() },
