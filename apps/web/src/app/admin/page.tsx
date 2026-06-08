@@ -1024,7 +1024,7 @@ export default function AdminPanel() {
                             <>
                               <button 
                                 onClick={() => setSelectedLeadId(lead.id)}
-                                className={`${lead.status !== 'NEW' ? '' : 'col-span-1'} py-2 bg-blue-600 text-white hover:bg-blue-700 font-bold text-xs rounded-lg shadow-sm transition-colors cursor-pointer`}
+                                className="col-span-1 py-2 bg-blue-600 text-white hover:bg-blue-700 font-bold text-xs rounded-lg shadow-sm transition-colors cursor-pointer"
                               >
                                 Satıldı (Poliçe)
                               </button>
@@ -1064,7 +1064,7 @@ export default function AdminPanel() {
                                     }
                                   );
                                 }}
-                                className="col-span-2 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 font-bold text-xs rounded-lg transition-colors cursor-pointer"
+                                className={`${lead.status === 'NEW' ? 'col-span-2' : 'col-span-1'} py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 font-bold text-xs rounded-lg transition-colors cursor-pointer`}
                               >
                                 Eksik Bilgiye Çek
                               </button>
