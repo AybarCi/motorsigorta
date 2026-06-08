@@ -658,6 +658,8 @@ export default function AdminPanel() {
     SOLD: leads.filter((l: any) => !l.is_archived && l.status === 'SOLD').length,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     LOST: leads.filter((l: any) => !l.is_archived && l.status === 'LOST').length,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    MISSING_INFO: leads.filter((l: any) => !l.is_archived && l.status === 'MISSING_INFO').length,
   };
 
   return (
@@ -723,7 +725,7 @@ export default function AdminPanel() {
         </div>
 
         {/* Lead Status Adetleri Widgets */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-6">
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center relative overflow-hidden group hover:shadow-md hover:-translate-y-0.5 transition-all">
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-500"></div>
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Yeni Başvuru</span>
@@ -748,6 +750,11 @@ export default function AdminPanel() {
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-rose-500"></div>
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Kaybedildi</span>
             <span className="text-3xl font-black text-rose-600 mt-2">{statusCounts.LOST}</span>
+          </div>
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center relative overflow-hidden group hover:shadow-md hover:-translate-y-0.5 transition-all">
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Eksik Bilgi</span>
+            <span className="text-3xl font-black text-red-600 mt-2">{statusCounts.MISSING_INFO}</span>
           </div>
         </div>
 
@@ -816,6 +823,7 @@ export default function AdminPanel() {
                           lead.status === 'CONTACTED' ? 'bg-purple-100 text-purple-700' :
                           lead.status === 'QUOTE_SENT' ? 'bg-yellow-100 text-yellow-700' :
                           lead.status === 'SOLD' ? 'bg-green-100 text-green-700' :
+                          lead.status === 'MISSING_INFO' ? 'bg-red-100 text-red-700' :
                           'bg-slate-100 text-slate-700'
                         }`}>
                           {lead.status}
@@ -991,18 +999,72 @@ export default function AdminPanel() {
                           {lead.status === 'NEW' && (
                             <button 
                               onClick={() => handleUpdateStatus(lead.id, 'CONTACTED')}
-                              className="py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium text-xs rounded-lg transition-colors"
+                              className="py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium text-xs rounded-lg transition-colors cursor-pointer"
                             >
                               Arandı Yap
                             </button>
                           )}
 
-                          {lead.status !== 'SOLD' && (
+                          {lead.status !== 'SOLD' && lead.status !== 'MISSING_INFO' && (
+                            <>
+                              <button 
+                                onClick={() => setSelectedLeadId(lead.id)}
+                                className={`${lead.status !== 'NEW' ? '' : 'col-span-1'} py-2 bg-blue-600 text-white hover:bg-blue-700 font-bold text-xs rounded-lg shadow-sm transition-colors cursor-pointer`}
+                              >
+                                Satıldı (Poliçe)
+                              </button>
+
+                              <button 
+                                onClick={() => {
+                                  showPrompt(
+                                    "Eksik Bilgi Gerekçesi",
+                                    "Müşterinin WhatsApp'ı yok / Eksik bilgi detayları...",
+                                    async (reason) => {
+                                      if (!reason.trim()) return;
+                                      try {
+                                        const existingNotes = lead.notes ? lead.notes + "\n" : "";
+                                        const newNotes = existingNotes + `[Sistem Notu] Eksik bilgiye çekildi. Sebep: ${reason}`;
+
+                                        const res = await fetch(`/api/v1/leads/${lead.id}`, {
+                                          method: "PATCH",
+                                          headers: { "Content-Type": "application/json" },
+                                          body: JSON.stringify({ 
+                                            status: "MISSING_INFO",
+                                            notes: newNotes
+                                          }),
+                                        });
+                                        const data = await res.json();
+                                        if (data.success) {
+                                          setLeads(prev => prev.map(l => l.id === lead.id ? {
+                                            ...l,
+                                            status: 'MISSING_INFO',
+                                            notes: newNotes
+                                          } : l));
+                                          showToast("Talep 'EKSİK BİLGİ' durumuna çekildi.");
+                                        }
+                                      } catch (err) {
+                                        console.error(err);
+                                        showToast("Bir hata oluştu.", "error");
+                                      }
+                                    }
+                                  );
+                                }}
+                                className="col-span-2 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 font-bold text-xs rounded-lg transition-colors cursor-pointer"
+                              >
+                                Eksik Bilgiye Çek
+                              </button>
+                            </>
+                          )}
+
+                          {lead.status === 'MISSING_INFO' && (
                             <button 
-                              onClick={() => setSelectedLeadId(lead.id)}
-                              className={`${lead.status !== 'NEW' ? 'col-span-2' : ''} py-2 bg-blue-600 text-white hover:bg-blue-700 font-bold text-xs rounded-lg shadow-sm transition-colors`}
+                              onClick={() => {
+                                handleUpdateStatus(lead.id, 'CONTACTED');
+                                showToast("Talep tekrar aktif sürece dahil edildi.");
+                              }}
+                              className="col-span-2 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 font-bold text-xs rounded-lg transition-colors cursor-pointer"
                             >
-                              Satıldı (Poliçe)
+                              Bilgiler Tamamlandı (İletişimde)
                             </button>
                           )}
                         </>

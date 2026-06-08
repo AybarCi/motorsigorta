@@ -10,6 +10,11 @@ datasource db {
 enum LeadStatus {
   NEW
   CONTACTED
+  QUOTE_SENT
+  SOLD
+  LOST
+  RENEWAL_DUE
+  MISSING_INFO
 }
 
 enum InsuranceType {
