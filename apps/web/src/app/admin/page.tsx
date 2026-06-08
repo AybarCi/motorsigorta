@@ -260,6 +260,7 @@ export default function AdminPanel() {
     const formData = new FormData(e.currentTarget);
     const full_name = formData.get("full_name") as string;
     const phone = formData.get("phone") as string;
+    const notes = formData.get("notes") as string;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const dynamic_fields: Record<string, any> = { ...editingLead.dynamic_fields };
@@ -327,6 +328,7 @@ export default function AdminPanel() {
         body: JSON.stringify({
           full_name,
           phone,
+          notes,
           dynamic_fields,
         }),
       });
@@ -344,6 +346,7 @@ export default function AdminPanel() {
             full_name,
             phone,
           },
+          notes,
           dynamic_fields,
         } : l));
         
@@ -940,6 +943,18 @@ export default function AdminPanel() {
                           {lead.dynamic_fields.travel_reason && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Sebep:</span><br/>{lead.dynamic_fields.travel_reason}</div>}
                           {lead.dynamic_fields.travel_region && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Bölge:</span><br/>{lead.dynamic_fields.travel_region}</div>}
                           {lead.dynamic_fields.travel_country && <div className="text-xs text-slate-600"><span className="text-slate-400 font-medium">Ülke:</span><br/>{lead.dynamic_fields.travel_country}</div>}
+                        </div>
+                      )}
+
+                      {lead.notes && (
+                        <div className="p-2.5 bg-slate-50 border border-slate-200/60 rounded-xl text-xs text-slate-600 whitespace-pre-wrap font-medium flex flex-col gap-1 mt-2">
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3 h-3 text-slate-400">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+                            </svg>
+                            Talep Notu / Gerekçe
+                          </span>
+                          <span>{lead.notes}</span>
                         </div>
                       )}
                       
@@ -1841,6 +1856,17 @@ export default function AdminPanel() {
                   </div>
                 </div>
               )}
+
+              <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                <label className="text-sm font-semibold text-slate-700">Talep Notları / Gerekçe</label>
+                <textarea 
+                  name="notes" 
+                  defaultValue={editingLead.notes || ""} 
+                  placeholder="Eksik bilgi veya özel talep notları..." 
+                  rows={3} 
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none resize-none" 
+                />
+              </div>
 
               <div className="flex gap-3 pt-4 border-t border-slate-100">
                 <button 
