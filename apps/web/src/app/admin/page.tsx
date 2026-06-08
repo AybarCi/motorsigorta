@@ -12,6 +12,16 @@ const formatWaPhone = (phone?: string) => {
   return "90" + cleaned;
 };
 
+const formatDateForInput = (dateStr?: string | Date | null) => {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "";
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function AdminPanel() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [leads, setLeads] = useState<any[]>([]);
@@ -104,6 +114,7 @@ export default function AdminPanel() {
 
   // Manuel Talep Ekleme State'leri
   const [isEditLeadOpen, setIsEditLeadOpen] = useState(false);
+  const [viewingNotes, setViewingNotes] = useState<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [editingLead, setEditingLead] = useState<any | null>(null);
   const [isSavingLead, setIsSavingLead] = useState(false);
@@ -176,6 +187,8 @@ export default function AdminPanel() {
     const phone = formData.get("phone") as string;
     const full_name = formData.get("full_name") as string;
     const lead_source = formData.get("lead_source") as string;
+    const birth_date = formData.get("birth_date") as string;
+    const existing_policy_expires_at = formData.get("existing_policy_expires_at") as string;
 
     const dynamic_fields: Record<string, string> = {};
     if (manualCategory === "vehicle") {
@@ -231,6 +244,8 @@ export default function AdminPanel() {
           insurance_category: manualCategory,
           insurance_type: manualType,
           lead_source,
+          birth_date: birth_date || null,
+          existing_policy_expires_at: existing_policy_expires_at || null,
           dynamic_fields,
         }),
       });
@@ -261,6 +276,8 @@ export default function AdminPanel() {
     const full_name = formData.get("full_name") as string;
     const phone = formData.get("phone") as string;
     const notes = formData.get("notes") as string;
+    const birth_date = formData.get("birth_date") as string;
+    const existing_policy_expires_at = formData.get("existing_policy_expires_at") as string;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const dynamic_fields: Record<string, any> = { ...editingLead.dynamic_fields };
@@ -329,6 +346,8 @@ export default function AdminPanel() {
           full_name,
           phone,
           notes,
+          birth_date: birth_date || null,
+          existing_policy_expires_at: existing_policy_expires_at || null,
           dynamic_fields,
         }),
       });
@@ -345,8 +364,10 @@ export default function AdminPanel() {
             ...l.customer,
             full_name,
             phone,
+            birth_date: birth_date || null,
           },
           notes,
+          existing_policy_expires_at: existing_policy_expires_at || null,
           dynamic_fields,
         } : l));
         
@@ -382,9 +403,12 @@ export default function AdminPanel() {
   const thisMonthLeads = leads.filter(l => !l.is_archived && new Date(l.created_at).getMonth() === new Date().getMonth()).length;
   const thisMonthSales = policies.filter(p => new Date(p.created_at).getMonth() === new Date().getMonth()).length;
   const conversionRate = thisMonthLeads > 0 ? Math.round((thisMonthSales / thisMonthLeads) * 100) : 0;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const upcomingRenewals = policies.filter((p: any) => {
+  const upcomingRenewals = policies.filter(p => {
     const days = Math.floor((new Date(p.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    return days >= 0 && days <= 30;
+  }).length + leads.filter(l => {
+    if (!l.existing_policy_expires_at) return false;
+    const days = Math.floor((new Date(l.existing_policy_expires_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
     return days >= 0 && days <= 30;
   }).length;
 
@@ -638,12 +662,26 @@ export default function AdminPanel() {
   const paginatedLeads = filteredLeads.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalLeadsPages = Math.ceil(filteredLeads.length / itemsPerPage);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const renewals = policies.map((p: any) => {
+  const policyRenewals = policies.map(p => {
     const days = Math.floor((new Date(p.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-    return { ...p, daysLeft: days };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  }).filter((p: any) => p.daysLeft >= 0 && p.daysLeft <= 30).sort((a: any, b: any) => a.daysLeft - b.daysLeft);
+    return { ...p, daysLeft: days, isExternal: false };
+  }).filter(p => p.daysLeft >= 0 && p.daysLeft <= 30);
+
+  const externalRenewals = leads.map(l => {
+    if (!l.existing_policy_expires_at) return null;
+    const days = Math.floor((new Date(l.existing_policy_expires_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    return { 
+      id: l.id,
+      daysLeft: days, 
+      isExternal: true, 
+      customer: l.customer, 
+      insurance_type: l.insurance_type,
+      end_date: l.existing_policy_expires_at,
+      policy_number: "Harici Poliçe / Fırsat",
+    };
+  }).filter(l => l !== null && l.daysLeft >= 0 && l.daysLeft <= 30);
+
+  const renewals = [...policyRenewals, ...externalRenewals].sort((a, b) => a.daysLeft - b.daysLeft);
 
   const paginatedRenewals = renewals.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalRenewalsPages = Math.ceil(renewals.length / itemsPerPage);
@@ -917,6 +955,24 @@ export default function AdminPanel() {
                           {lead.insurance_type}
                         </span>
                       </div>
+
+                      {lead.customer?.birth_date && (
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-xs font-semibold text-slate-500">Doğum Tarihi</span>
+                          <span className="text-xs font-bold text-slate-700">
+                            {new Date(lead.customer.birth_date).toLocaleDateString('tr-TR')}
+                          </span>
+                        </div>
+                      )}
+
+                      {lead.existing_policy_expires_at && (
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-xs font-semibold text-slate-500">Mevcut Poliçe Bitiş</span>
+                          <span className="text-xs font-bold text-rose-600">
+                            {new Date(lead.existing_policy_expires_at).toLocaleDateString('tr-TR')}
+                          </span>
+                        </div>
+                      )}
                       
                       {lead.dynamic_fields && Object.keys(lead.dynamic_fields).length > 0 && (
                         <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-slate-50 border-dashed">
@@ -947,15 +1003,13 @@ export default function AdminPanel() {
                       )}
 
                       {lead.notes && (
-                        <div className="p-2.5 bg-slate-50 border border-slate-200/60 rounded-xl text-xs text-slate-600 whitespace-pre-wrap font-medium flex flex-col gap-1 mt-2">
-                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3 h-3 text-slate-400">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
-                            </svg>
-                            Talep Notu / Gerekçe
-                          </span>
-                          <span>{lead.notes}</span>
-                        </div>
+                        <button
+                          onClick={() => setViewingNotes(lead.notes)}
+                          className="mt-2 text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1 cursor-pointer self-start"
+                        >
+                          <span>📝</span>
+                          <span>Talep Notunu Gör</span>
+                        </button>
                       )}
                       
                       <div className="flex items-center justify-between pt-2">
@@ -1107,12 +1161,21 @@ export default function AdminPanel() {
                     {/* Header */}
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        <h3 className="font-bold text-lg text-slate-900">{policy.customer?.phone}</h3>
-                        <p className="text-xs text-slate-500 font-mono mt-0.5">{policy.policy_number}</p>
+                        <h3 className="font-bold text-base text-slate-900 leading-tight">{policy.customer?.full_name || "İsimsiz Müşteri"}</h3>
+                        <p className="text-xs text-slate-500 font-medium mt-1">
+                          {formatWaPhone(policy.customer?.phone).replace(/^90/, '0')} • <span className="font-mono text-[10px] bg-slate-50 px-1 py-0.5 rounded border border-slate-100">{policy.policy_number}</span>
+                        </p>
                       </div>
-                      <span className="inline-flex px-2 py-1 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                        {policy.insurance_type}
-                      </span>
+                      <div className="flex flex-col items-end gap-1">
+                        {policy.isExternal && (
+                          <span className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-100 text-blue-700 border border-blue-200 uppercase tracking-wider">
+                            Harici
+                          </span>
+                        )}
+                        <span className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-700 border border-slate-200 uppercase tracking-wider">
+                          {policy.insurance_type}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Middle */}
@@ -1449,6 +1512,27 @@ export default function AdminPanel() {
                   placeholder="Örn: 0555 444 33 22" 
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Müşteri Doğum Tarihi</label>
+                  <input 
+                    name="birth_date" 
+                    type="date" 
+                    defaultValue={formatDateForInput(editingLead.customer?.birth_date)}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">Mevcut Poliçe Bitiş</label>
+                  <input 
+                    name="existing_policy_expires_at" 
+                    type="date" 
+                    defaultValue={formatDateForInput(editingLead.existing_policy_expires_at)}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                  />
+                </div>
               </div>
 
               {/* Dinamik Alanlar */}
@@ -1904,6 +1988,25 @@ export default function AdminPanel() {
             <div className="space-y-1.5">
               <label className="text-sm font-semibold text-slate-700">Telefon Numarası</label>
               <input name="phone" required type="tel" placeholder="Örn: 0555 444 33 22" className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700">Müşteri Doğum Tarihi</label>
+                <input 
+                  name="birth_date" 
+                  type="date" 
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700">Mevcut Poliçe Bitiş</label>
+                <input 
+                  name="existing_policy_expires_at" 
+                  type="date" 
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                />
+              </div>
             </div>
 
             <div className="space-y-1.5">
@@ -2573,7 +2676,7 @@ export default function AdminPanel() {
         </Dialog>
       )}
 
-      {/* Custom Prompt Modal */}
+       {/* Custom Prompt Modal */}
       {promptModal.isOpen && (
         <PromptModalInner 
           title={promptModal.title}
@@ -2582,6 +2685,28 @@ export default function AdminPanel() {
           onConfirm={promptModal.onConfirm}
         />
       )}
+
+      {/* View Notes Modal */}
+      <Dialog open={!!viewingNotes} onOpenChange={(open) => !open && setViewingNotes(null)}>
+        <DialogContent className="sm:max-w-[440px] p-6 rounded-2xl bg-white border border-slate-200 shadow-2xl text-slate-900">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-lg font-black text-slate-900 flex items-center gap-2">
+              📝 Talep Notu / Gerekçe
+            </DialogTitle>
+          </DialogHeader>
+          <div className="my-4 p-4 bg-slate-50 border border-slate-200/60 rounded-xl text-sm text-slate-700 whitespace-pre-wrap font-medium max-h-[60vh] overflow-y-auto">
+            {viewingNotes}
+          </div>
+          <DialogFooter className="flex justify-end gap-2.5 mt-2 border-t border-slate-100 pt-4">
+            <button
+              onClick={() => setViewingNotes(null)}
+              className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
+            >
+              Kapat
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );

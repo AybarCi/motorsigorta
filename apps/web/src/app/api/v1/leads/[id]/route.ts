@@ -34,14 +34,19 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         data: {
           phone: body.phone,
           full_name: body.full_name !== undefined ? body.full_name : undefined,
+          birth_date: body.birth_date !== undefined ? (body.birth_date ? new Date(body.birth_date) : null) : undefined,
         },
       });
-    } else if (body.full_name && body.full_name !== existingLead.customer.full_name) {
-      // Update customer name only
+    } else if (
+      (body.full_name !== undefined && body.full_name !== existingLead.customer.full_name) ||
+      body.birth_date !== undefined
+    ) {
+      // Update customer name and/or birth_date
       await prisma.customer.update({
         where: { id: existingLead.customer_id },
         data: {
-          full_name: body.full_name,
+          full_name: body.full_name !== undefined ? body.full_name : undefined,
+          birth_date: body.birth_date !== undefined ? (body.birth_date ? new Date(body.birth_date) : null) : undefined,
         },
       });
     }
@@ -54,6 +59,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         notes: body.notes,
         last_contacted_at: body.last_contacted_at ? new Date(body.last_contacted_at) : undefined,
         next_follow_up_at: body.next_follow_up_at ? new Date(body.next_follow_up_at) : undefined,
+        existing_policy_expires_at: body.existing_policy_expires_at !== undefined ? (body.existing_policy_expires_at ? new Date(body.existing_policy_expires_at) : null) : undefined,
         assigned_to: body.assigned_to,
         is_archived: body.is_archived,
         dynamic_fields: body.dynamic_fields !== undefined ? body.dynamic_fields : undefined,

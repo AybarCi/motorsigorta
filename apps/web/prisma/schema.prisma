@@ -48,6 +48,7 @@ model Customer {
   full_name        String?
   phone            String    @unique
   email            String?
+  birth_date       DateTime?
   last_activity_at DateTime?
   is_archived      Boolean   @default(false)
   created_at       DateTime  @default(now())
@@ -60,23 +61,24 @@ model Customer {
 }
 
 model Lead {
-  id                 String        @id @default(uuid())
-  tracking_id        String        @unique
-  customer_id        String
-  insurance_category String
-  insurance_type     InsuranceType
-  dynamic_fields     Json
-  utm_source         String?
-  utm_campaign       String?
-  lead_source        String?
-  status             LeadStatus    @default(NEW)
-  notes              String?       @db.Text
-  last_contacted_at  DateTime?
-  next_follow_up_at  DateTime?
-  assigned_to        String?
-  is_archived        Boolean       @default(false)
-  created_at         DateTime      @default(now())
-  updated_at         DateTime      @updatedAt
+  id                         String        @id @default(uuid())
+  tracking_id                String        @unique
+  customer_id                String
+  insurance_category         String
+  insurance_type             InsuranceType
+  dynamic_fields             Json
+  utm_source                 String?
+  utm_campaign               String?
+  lead_source                String?
+  status                     LeadStatus    @default(NEW)
+  notes                      String?       @db.Text
+  last_contacted_at          DateTime?
+  next_follow_up_at          DateTime?
+  existing_policy_expires_at DateTime?
+  assigned_to                String?
+  is_archived                Boolean       @default(false)
+  created_at                 DateTime      @default(now())
+  updated_at                 DateTime      @updatedAt
 
   customer Customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)
   policies Policy[]

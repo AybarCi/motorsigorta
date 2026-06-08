@@ -31,18 +31,20 @@ enum InsuranceType {
 }
 
 model Lead {
-  id                 String        @id @default(uuid())
-  tracking_id        String        @unique
-  insurance_category String
-  insurance_type     InsuranceType
-  dynamic_fields     Json
-  phone              String        @unique
-  utm_source         String?
-  utm_campaign       String?
-  lead_source        String?
-  status             LeadStatus    @default(NEW)
-  created_at         DateTime      @default(now())
-  updated_at         DateTime      @updatedAt
+  id                         String        @id @default(uuid())
+  tracking_id                String        @unique
+  insurance_category         String
+  insurance_type             InsuranceType
+  dynamic_fields             Json
+  phone                      String        @unique
+  utm_source                 String?
+  utm_campaign               String?
+  lead_source                String?
+  status                     LeadStatus    @default(NEW)
+  birth_date                 DateTime?
+  existing_policy_expires_at DateTime?
+  created_at                 DateTime      @default(now())
+  updated_at                 DateTime      @updatedAt
 
   @@map("leads")
 }

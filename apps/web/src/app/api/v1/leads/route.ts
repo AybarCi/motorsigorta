@@ -6,6 +6,9 @@ export async function POST(req: Request) {
     const body = await req.json();
     
     // Find or create customer
+    const birthDateParsed = body.birth_date ? new Date(body.birth_date) : null;
+    const existingPolicyExpiresAtParsed = body.existing_policy_expires_at ? new Date(body.existing_policy_expires_at) : null;
+
     let customer = await prisma.customer.findUnique({
       where: { phone: body.phone },
     });
@@ -15,6 +18,7 @@ export async function POST(req: Request) {
         data: {
           phone: body.phone,
           full_name: body.full_name || body.dynamic_fields?.full_name || null,
+          birth_date: birthDateParsed,
           last_activity_at: new Date(),
         },
       });
@@ -23,6 +27,7 @@ export async function POST(req: Request) {
         where: { id: customer.id },
         data: { 
           full_name: body.full_name || body.dynamic_fields?.full_name || customer.full_name,
+          birth_date: birthDateParsed !== null ? birthDateParsed : customer.birth_date,
           last_activity_at: new Date(),
         },
       });
@@ -43,6 +48,7 @@ export async function POST(req: Request) {
         utm_campaign: body.utm_campaign,
         lead_source: body.lead_source,
         status: 'NEW',
+        existing_policy_expires_at: existingPolicyExpiresAtParsed,
       },
     });
 
