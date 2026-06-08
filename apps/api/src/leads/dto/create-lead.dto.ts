@@ -1,4 +1,4 @@
-import { InsuranceType } from '@prisma/client';
+import { InsuranceType } from '../../generated/prisma-client';
 
 export class CreateLeadDto {
   insurance_category: string;

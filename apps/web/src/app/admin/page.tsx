@@ -1306,7 +1306,7 @@ export default function AdminPanel() {
                                 method: "PATCH",
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({ 
-                                  status: "LOST",
+                                  status: "MISSING_INFO",
                                   notes: newNotes
                                 }),
                               });
@@ -1314,10 +1314,10 @@ export default function AdminPanel() {
                               if (data.success) {
                                 setLeads(prev => prev.map(l => l.id === quoteModalLeadId ? {
                                   ...l,
-                                  status: 'LOST',
+                                  status: 'MISSING_INFO',
                                   notes: newNotes
                                 } : l));
-                                showToast("Talep 'KAYBEDİLDİ' (Teklif İletilemedi) olarak işaretlendi.");
+                                showToast("Talep 'EKSİK BİLGİ' (Teklif İletilemedi) olarak işaretlendi.");
                                 setQuoteModalLeadId(null);
                               }
                             } catch (err) {
